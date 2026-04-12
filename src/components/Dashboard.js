@@ -4,12 +4,11 @@ import axios from 'axios';
 
 const API = 'http://localhost:8080/api';
 
-// Elegant, upscale food photography from Unsplash
 const IMAGES = [
-  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=90', // plated fine dining
-  'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&q=90', // gourmet spread
-  'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=1200&q=90', // fresh produce
-  'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=1200&q=90', // healthy grocery
+  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=90',
+  'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&q=90',
+  'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=1200&q=90',
+  'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=1200&q=90',
 ];
 
 const tiles = [
@@ -61,6 +60,104 @@ const tiles = [
   },
 ];
 
+function Tile({ tile, onClick }) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: hovered ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.08)',
+        backdropFilter: hovered ? 'blur(28px)' : 'blur(12px)',
+        WebkitBackdropFilter: hovered ? 'blur(28px)' : 'blur(12px)',
+        border: hovered ? '1px solid rgba(255,255,255,0.8)' : '1px solid rgba(255,255,255,0.15)',
+        borderRadius: '4px',
+        padding: '32px 28px',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '22px',
+        transition: 'all 0.35s ease',
+        position: 'relative',
+        overflow: 'hidden',
+        transform: hovered ? 'translateY(-2px)' : 'translateY(0)',
+        boxShadow: hovered ? '0 12px 40px rgba(0,0,0,0.3)' : 'none',
+      }}
+    >
+      {/* Colored left accent bar */}
+      <div style={{
+        position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px',
+        background: tile.accent,
+        borderRadius: '4px 0 0 4px',
+      }} />
+
+      {/* Icon */}
+      <div style={{
+        width: '52px', height: '52px',
+        border: `1.5px solid ${tile.accent}`,
+        borderRadius: '2px',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0,
+        background: 'rgba(255,255,255,0.05)',
+      }}>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none"
+          stroke={tile.accent} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+          {tile.iconPath}
+        </svg>
+      </div>
+
+      {/* Text */}
+      <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+          <h3 style={{
+            margin: 0, fontSize: '17px', fontWeight: '700',
+            color: hovered ? '#1a1a1a' : '#ffffff',
+            fontFamily: 'Georgia, serif',
+            letterSpacing: '0.5px',
+            textShadow: hovered ? 'none' : '0 1px 4px rgba(0,0,0,0.5)',
+            transition: 'color 0.35s ease',
+          }}>
+            {tile.title}
+          </h3>
+          {tile.adminOnly && (
+            <span style={{
+              fontSize: '9px',
+              border: hovered ? '1px solid #a0622a' : '1px solid #e8c49a',
+              color: hovered ? '#a0622a' : '#e8c49a',
+              padding: '2px 6px',
+              borderRadius: '2px', letterSpacing: '1px',
+              transition: 'all 0.35s ease',
+            }}>
+              ADMIN
+            </span>
+          )}
+        </div>
+        <p style={{
+          margin: 0, fontSize: '13px',
+          color: hovered ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.95)',
+          lineHeight: '1.6', fontFamily: 'Georgia, serif',
+          fontStyle: 'italic',
+          transition: 'color 0.35s ease',
+        }}>
+          {tile.desc}
+        </p>
+      </div>
+
+      {/* Arrow */}
+      <div style={{
+        fontSize: '22px',
+        color: hovered ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.7)',
+        flexShrink: 0,
+        transition: 'color 0.35s ease',
+      }}>
+        ›
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -75,7 +172,6 @@ export default function Dashboard() {
     setUser(parsed);
     setLoading(false);
 
-    // Slowly cycle background images
     const interval = setInterval(() => {
       setBgIndex(i => (i + 1) % IMAGES.length);
     }, 6000);
@@ -107,7 +203,6 @@ export default function Dashboard() {
       overflow: 'hidden',
     }}>
 
-      {/* Full-page background — cycling food images */}
       {IMAGES.map((img, i) => (
         <div key={i} style={{
           position: 'fixed', inset: 0, zIndex: 0,
@@ -119,13 +214,11 @@ export default function Dashboard() {
         }} />
       ))}
 
-      {/* Dark overlay for elegance and readability */}
       <div style={{
         position: 'fixed', inset: 0, zIndex: 1,
         background: 'linear-gradient(135deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.55) 100%)',
       }} />
 
-      {/* Content */}
       <div style={{
         position: 'relative', zIndex: 2,
         maxWidth: '960px', margin: '0 auto',
@@ -141,17 +234,14 @@ export default function Dashboard() {
           borderBottom: '1px solid rgba(255,255,255,0.15)',
           marginBottom: '48px',
         }}>
-          {/* Logo + wordmark */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             <img
               src="/logo.jpg"
               alt="IngrediSure"
               style={{
-                height: '70px',
-                objectFit: 'contain',
+                height: '70px', objectFit: 'contain',
                 filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.8)) contrast(1.1) brightness(1.1)',
                 borderRadius: '16px',
-                padding: '0',
                 mixBlendMode: 'luminosity',
               }}
               onError={e => e.target.style.display = 'none'}
@@ -173,11 +263,10 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* User info + logout */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <div style={{ textAlign: 'right' }}>
               <div style={{
-                fontSize: '13px', color: 'rgba(255,255,255,0.7)',
+                fontSize: '13px', color: 'rgba(255,255,255,0.95)',
                 letterSpacing: '1px', marginBottom: '4px',
               }}>
                 WELCOME BACK
@@ -190,9 +279,10 @@ export default function Dashboard() {
                 {user?.role === 'ROLE_ADMIN' && (
                   <span style={{
                     marginLeft: '10px', fontSize: '10px',
-                    border: '1px solid #e8c49a', color: '#e8c49a',
+                    border: '2px solid #FF8C42', color: '#FF8C42',
                     padding: '2px 8px', borderRadius: '2px',
                     letterSpacing: '2px', verticalAlign: 'middle',
+                    fontWeight: 'bold',
                   }}>
                     ADMIN
                   </span>
@@ -200,15 +290,13 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Avatar */}
             <div style={{
               width: '44px', height: '44px', borderRadius: '50%',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              textAlign: 'center', lineHeight: '44px',
               background: 'rgba(232, 196, 154, 0.5)',
-            
-              
-              
+              border: '2px solid rgba(255, 200, 120, 0.95)',
+              fontSize: '18px', color: '#ffffff', fontFamily: 'Georgia, serif',
+              fontWeight: 'bold', textAlign: 'center',
             }}>
               {user?.username?.[0]?.toUpperCase()}
             </div>
@@ -216,16 +304,11 @@ export default function Dashboard() {
             <button
               onClick={handleLogout}
               style={{
-                background: 'transparent',
-                color: '#ffffff',
+                background: 'transparent', color: '#ffffff',
                 border: '1px solid rgba(255,255,255,0.5)',
-                padding: '10px 28px',
-                borderRadius: '2px',
-                cursor: 'pointer',
-                fontFamily: 'Georgia, serif',
-                fontSize: '12px',
-                letterSpacing: '2px',
-                transition: 'all 0.3s',
+                padding: '10px 28px', borderRadius: '2px',
+                cursor: 'pointer', fontFamily: 'Georgia, serif',
+                fontSize: '12px', letterSpacing: '2px', transition: 'all 0.3s',
               }}
               onMouseOver={e => {
                 e.target.style.background = 'rgba(255,255,255,0.1)';
@@ -264,7 +347,7 @@ export default function Dashboard() {
           </h2>
         </div>
 
-        {/* Tiles — transparent glass with colored accent */}
+        {/* Tiles */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
@@ -272,110 +355,11 @@ export default function Dashboard() {
           paddingBottom: '48px',
         }}>
           {visibleTiles.map(tile => (
-            <div
+            <Tile
               key={tile.id}
+              tile={tile}
               onClick={() => navigate(tile.route)}
-              style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                borderRadius: '4px',
-                padding: '32px 28px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '22px',
-                transition: 'all 0.3s ease',
-                position: 'relative',
-                overflow: 'hidden',
-              }}
-              onMouseOver={e => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.45)';
-                e.currentTarget.style.backdropFilter = 'blur(24px)';
-                e.currentTarget.style.WebkitBackdropFilter = 'blur(24px)';
-                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.6)';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.3)';
-                const title = e.currentTarget.querySelector('h3');
-                const desc = e.currentTarget.querySelector('p');
-                const arrow = e.currentTarget.querySelector('.arrow');
-                if (title) title.style.color = '#1a1a1a';
-                if (desc) desc.style.color = 'rgba(0,0,0,0.6)';
-                if (arrow) arrow.style.color = 'rgba(0,0,0,0.4)';
-              }}
-              onMouseOut={e => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
-                e.currentTarget.style.backdropFilter = 'blur(12px)';
-                e.currentTarget.style.WebkitBackdropFilter = 'blur(12px)';
-                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
-            >
-              {/* Colored left accent bar */}
-              <div style={{
-                position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px',
-                background: tile.accent,
-                borderRadius: '4px 0 0 4px',
-              }} />
-
-              {/* Icon — refined minimal SVG */}
-              <div style={{
-                width: '52px', height: '52px',
-                border: `1.5px solid ${tile.accent}`,
-                borderRadius: '2px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0,
-                background: 'rgba(255,255,255,0.05)',
-              }}>
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none"
-                  stroke={tile.accent} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-                  {tile.iconPath}
-                </svg>
-              </div>
-
-              {/* Text */}
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                  <h3 style={{
-                    margin: 0, fontSize: '17px', fontWeight: '400',
-                    color: '#ffffff', fontFamily: 'Georgia, serif',
-                    letterSpacing: '0.5px',
-                  }}>
-                    {tile.title}
-                  </h3>
-                  {tile.adminOnly && (
-                    <span style={{
-                      fontSize: '9px', border: '1px solid #e8c49a',
-                      color: '#e8c49a', padding: '2px 6px',
-                      borderRadius: '2px', letterSpacing: '1px',
-                    }}>
-                      ADMIN
-                    </span>
-                  )}
-                </div>
-                <p style={{
-                  margin: 0, fontSize: '13px',
-                  color: 'rgba(255,255,255,0.6)',
-                  lineHeight: '1.6', fontFamily: 'Georgia, serif',
-                  fontStyle: 'italic',
-                }}>
-                  {tile.desc}
-                </p>
-              </div>
-
-              {/* Arrow */}
-              <div style={{
-                fontSize: '18px', color: 'rgba(255,255,255,0.4)',
-                <div className="arrow" style={{
-                fontSize: '18px', color: 'rgba(255,255,255,0.4)',
-                flexShrink: 0, letterSpacing: '-2px',
-                transition: 'color 0.3s',
-              }}>
-                ›
-              </div>
-            </div>
+            />
           ))}
         </div>
       </div>
