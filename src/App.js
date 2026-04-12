@@ -3,7 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './components/Login';
 import Register from './components/Register';
 import Dashboard from './components/Dashboard';
-import ForgotPassword from './components/ForgotPassword'; // ADD THIS
+import ForgotPassword from './components/ForgotPassword';
+import HealthProfile from './components/HealthProfile';
 
 function App() {
   return (
@@ -11,8 +12,9 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} /> {/* ADD THIS */}
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/profile" element={<HealthProfile />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
