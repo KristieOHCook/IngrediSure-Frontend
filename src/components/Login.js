@@ -23,7 +23,7 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:8080/api/users/login', { username, password });
+      const res = await axios.post('http://localhost:8080/api/auth/login', { username, password });
       // Store the full user object from the backend
       localStorage.setItem("user", JSON.stringify(res.data));
       navigate('/dashboard');

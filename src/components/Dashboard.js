@@ -2,271 +2,383 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-const SPOONACULAR_KEY = '3a1f1fbc2b194b5d89399cb97fbb303d';
+const API = 'http://localhost:8080/api';
 
-function Dashboard() {
+// Elegant, upscale food photography from Unsplash
+const IMAGES = [
+  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=90', // plated fine dining
+  'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&q=90', // gourmet spread
+  'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=1200&q=90', // fresh produce
+  'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=1200&q=90', // healthy grocery
+];
+
+const tiles = [
+  {
+    id: 'grocery',
+    title: 'Grocery Scanner',
+    desc: 'Search products and verify ingredient safety',
+    route: '/grocery',
+    accent: 'rgba(255, 107, 53, 0.9)',
+    iconPath: <>
+      <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+      <line x1="3" y1="6" x2="21" y2="6"/>
+      <path d="M16 10a4 4 0 01-8 0"/>
+    </>,
+  },
+  {
+    id: 'restaurant',
+    title: 'Restaurant Finder',
+    desc: 'Discover safe dining options near you',
+    route: '/restaurant',
+    accent: 'rgba(74, 159, 212, 0.9)',
+    iconPath: <>
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+      <circle cx="12" cy="10" r="3"/>
+    </>,
+  },
+  {
+    id: 'health',
+    title: 'Health Profile',
+    desc: 'Manage your dietary restrictions and conditions',
+    route: '/profile',
+    accent: 'rgba(93, 187, 99, 0.9)',
+    iconPath: <>
+      <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+    </>,
+  },
+  {
+    id: 'admin',
+    title: 'Admin Dashboard',
+    desc: 'Manage users, analytics, and system data',
+    route: '/admin',
+    accent: 'rgba(232, 196, 154, 0.9)',
+    iconPath: <>
+      <line x1="18" y1="20" x2="18" y2="10"/>
+      <line x1="12" y1="20" x2="12" y2="4"/>
+      <line x1="6" y1="20" x2="6" y2="14"/>
+    </>,
+    adminOnly: true,
+  },
+];
+
+export default function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [activeTab, setActiveTab] = useState('pantry');
-  const [newIngredient, setNewIngredient] = useState('');
-  const [customCondition, setCustomCondition] = useState('');
-  const [productSearch, setProductSearch] = useState('');
-  const [productResult, setProductResult] = useState(null);
-  const [zipCode, setZipCode] = useState('');
-  const [restaurants, setRestaurants] = useState([]);
-  const [selectedMenu, setSelectedMenu] = useState(null);
+  const [bgIndex, setBgIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [allUsers, setAllUsers] = useState([]);
 
   useEffect(() => {
-    const savedUser = JSON.parse(localStorage.getItem("user"));
-    // Safety: If no user in storage, kick back to login immediately
-    if (!savedUser || !savedUser.username || savedUser.username === 'new') {
-      localStorage.clear();
-      navigate('/');
-    } else {
-      fetchUserData(savedUser.username);
-    }
-  }, [navigate]);
-
-  const fetchUserData = async (username) => {
-    try {
-      const res = await axios.get(`http://localhost:8080/api/users/${username}`);
-      setUser(res.data);
-      if (username === 'admin') {
-        const adminRes = await axios.get('http://localhost:8080/api/users/admin/all');
-        setAllUsers(adminRes.data || []);
-      }
-    } catch (e) { 
-      console.error("Sync error", e);
-      // If backend says user doesn't exist, go to login
-      navigate('/');
-    }
+    const stored = localStorage.getItem('user');
+    if (!stored) { navigate('/'); return; }
+    const parsed = JSON.parse(stored);
+    if (!parsed?.token) { navigate('/'); return; }
+    setUser(parsed);
     setLoading(false);
-  };
+
+    // Slowly cycle background images
+    const interval = setInterval(() => {
+      setBgIndex(i => (i + 1) % IMAGES.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [navigate]);
 
   const handleLogout = () => {
     localStorage.clear();
-    setUser(null);
     navigate('/');
   };
 
-  // --- ACTIONS ---
-  const handleAddCondition = async (cond) => {
-    const val = cond || customCondition;
-    // Safety Gate: Ensure user.username exists and isn't "new"
-    if (!val || !user?.username || user.username === 'new') return;
-    try {
-      const res = await axios.post(`http://localhost:8080/api/users/${user.username}/conditions`, val, { headers: { 'Content-Type': 'text/plain' } });
-      setUser(res.data);
-      setCustomCondition('');
-    } catch (e) { console.error(e); }
-  };
+  const visibleTiles = tiles.filter(t => !t.adminOnly || user?.role === 'ROLE_ADMIN');
 
-  const handleManualAddIngredient = async () => {
-    // Safety Gate: Check username before firing request
-    if (!newIngredient || !user?.username || user.username === 'new') {
-      console.error("User not fully loaded yet.");
-      return;
-    }
-    try {
-      const res = await axios.post(`http://localhost:8080/api/users/${user.username}/ingredients`, newIngredient, { headers: { 'Content-Type': 'text/plain' } });
-      setUser(res.data);
-      setNewIngredient('');
-    } catch (e) { console.error(e); }
-  };
-
-  // --- PANTRY SEARCH ---
-  const handleProductSearch = async () => {
-    if (!productSearch) return;
-    setAnalyzing(true);
-    setProductResult(null);
-    try {
-      const res = await axios.get(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(productSearch)}&json=1`);
-      if (res.data.products?.length > 0) {
-        const p = res.data.products[0];
-        const ingredients = (p.ingredients_text || "").toLowerCase();
-        const redFlags = user.avoidIngredients.filter(ing => ingredients.includes(ing.toLowerCase().trim()));
-        setProductResult({ name: p.product_name, redFlags: redFlags });
-      }
-    } catch (e) { console.error(e); }
-    setAnalyzing(false);
-  };
-
-  // --- DINING SEARCH ---
-  const handleRestaurantSearch = async () => {
-    if (!zipCode) return;
-    try {
-      const res = await axios.get(`http://localhost:8080/api/users/restaurants/${zipCode}`);
-      setRestaurants(res.data.businesses || []);
-    } catch (e) { console.error(e); }
-  };
-
-  const analyzeRestaurant = async (restaurant) => {
-    setAnalyzing(true);
-    setSelectedMenu(null);
-    try {
-      let res = await axios.get(`https://api.spoonacular.com/food/menuItems/search?query=${encodeURIComponent(restaurant.name)}&apiKey=${SPOONACULAR_KEY}&number=5`);
-      if (!res.data.menuItems || res.data.menuItems.length === 0) {
-        const cuisine = restaurant.categories?.[0]?.title || "Food";
-        res = await axios.get(`https://api.spoonacular.com/food/menuItems/search?query=${encodeURIComponent(cuisine)}&apiKey=${SPOONACULAR_KEY}&number=5`);
-      }
-      const analyzed = res.data.menuItems.map(item => {
-        const content = item.title.toLowerCase();
-        const flags = user.avoidIngredients.filter(i => content.includes(i.toLowerCase().trim()));
-        return { name: item.title, isSafe: flags.length === 0, flags: flags };
-      });
-      setSelectedMenu({ name: restaurant.name, items: analyzed });
-    } catch (e) { console.error(e); }
-    setAnalyzing(false);
-  };
-
-  const saveToPantry = async (name) => {
-    if (!user?.username) return;
-    const res = await axios.post(`http://localhost:8080/api/users/${user.username}/pantry`, name, { headers: { 'Content-Type': 'text/plain' } });
-    setUser(res.data);
-  };
-
-  if (loading || !user) return <div style={{textAlign:'center', marginTop:'100px', fontFamily:'Quicksand'}}>Initializing Secure Connection... 🔒</div>;
+  if (loading) return (
+    <div style={{
+      display: 'flex', justifyContent: 'center', alignItems: 'center',
+      height: '100vh', background: '#1a1a1a', color: '#c9b99a',
+      fontFamily: 'Georgia, serif', fontSize: '18px', letterSpacing: '2px',
+    }}>
+      INGREDISURE
+    </div>
+  );
 
   return (
-    <div style={{ backgroundColor: '#fcfaf9', minHeight: '100vh', fontFamily: "'Quicksand', sans-serif", padding: '20px' }}>
-      
-      {/* HEADER */}
-      <nav style={{ maxWidth: '1200px', margin: '0 auto 40px auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white', padding: '20px 50px', borderRadius: '40px', boxShadow: '0 10px 30px rgba(0,0,0,0.04)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
-          <img src="/logo.jpg" alt="Logo" style={{ height: '90px', borderRadius: '15px' }} />
-          <div>
-            <h2 style={{ color: '#a5a58d', margin: 0, fontWeight: 800, fontSize: '32px' }}>Ingredi<span style={{color: '#cb997e', fontWeight: 300 }}>Sure</span></h2>
-            <p style={{ margin: 0, color: '#b7b7a4', fontSize: '14px' }}>Authenticated: <strong>{user.username}</strong></p>
-          </div>
-        </div>
-        <button onClick={handleLogout} className="hover-btn" style={{ background: '#fdf3e7', color: '#cb997e', border: 'none', padding: '12px 30px', borderRadius: '25px', fontWeight: 'bold', cursor: 'pointer' }}>Logout</button>
-      </nav>
+    <div style={{
+      minHeight: '100vh',
+      fontFamily: "'Georgia', 'Garamond', serif",
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
 
-      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '30px' }}>
-        
-        {/* SIDEBAR */}
-        <div style={{ gridColumn: 'span 4' }}>
-          <div className="card" style={{ background: 'white', padding: '30px', borderRadius: '40px', boxShadow: '0 15px 35px rgba(0,0,0,0.02)', marginBottom: '30px' }}>
-            <h4 style={{ color: '#cb997e', marginTop: 0 }}>🏥 Health Profile</h4>
-            <select onChange={(e) => { if(e.target.value) handleAddCondition(e.target.value); e.target.value=""; }} style={{ width: '100%', padding: '12px', borderRadius: '15px', border: '1px solid #eee', marginBottom: '10px' }}>
-              <option value="">+ Quick Add...</option>
-              <option value="Hypertension">Hypertension</option>
-              <option value="Diabetes (Type 2)">Diabetes (Type 2)</option>
-              <option value="Celiac Disease">Celiac Disease</option>
-            </select>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '15px' }}>
-              <input value={customCondition} onChange={(e) => setCustomCondition(e.target.value)} placeholder="Type custom..." style={{ flex: 1, padding: '10px', borderRadius: '12px', border: '1px solid #eee' }} />
-              <button onClick={() => handleAddCondition()} style={{ background: '#cb997e', color: 'white', border: 'none', borderRadius: '10px', padding: '0 15px', fontWeight: 'bold', cursor: 'pointer' }}>Add</button>
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {user.healthConditions?.map((c, i) => (
-                <div key={i} className="tooltip" style={{ background: '#cb997e', color: 'white', padding: '6px 14px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold', cursor: 'help' }}>
-                  {c}<span className="tooltiptext">Scanning for {c} red flags...</span>
-                </div>
-              ))}
-            </div>
-          </div>
+      {/* Full-page background — cycling food images */}
+      {IMAGES.map((img, i) => (
+        <div key={i} style={{
+          position: 'fixed', inset: 0, zIndex: 0,
+          backgroundImage: `url(${img})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          opacity: i === bgIndex ? 1 : 0,
+          transition: 'opacity 2s ease-in-out',
+        }} />
+      ))}
 
-          <div className="card" style={{ background: 'white', padding: '30px', borderRadius: '40px', boxShadow: '0 15px 35px rgba(0,0,0,0.02)', marginBottom: '30px' }}>
-            <h4 style={{ color: '#a5a58d', marginTop: 0 }}>🚫 Avoidance List</h4>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '15px' }}>
-              <input value={newIngredient} onChange={(e) => setNewIngredient(e.target.value)} placeholder="Manual add..." style={{ flex: 1, padding: '10px', borderRadius: '12px', border: '1px solid #eee' }} />
-              <button onClick={handleManualAddIngredient} style={{ background: '#a5a58d', color: 'white', border: 'none', borderRadius: '10px', padding: '0 15px', fontWeight: 'bold', cursor: 'pointer' }}>+</button>
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {user.avoidIngredients?.map((ing, i) => <span key={i} style={{ background: '#f0f2ed', padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 700 }}>{ing}</span>)}
-            </div>
-          </div>
+      {/* Dark overlay for elegance and readability */}
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 1,
+        background: 'linear-gradient(135deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.55) 100%)',
+      }} />
 
-          <div className="card" style={{ background: 'white', padding: '30px', borderRadius: '40px', boxShadow: '0 15px 35px rgba(0,0,0,0.02)' }}>
-            <h4 style={{ color: '#cb997e', marginTop: 0 }}>🥫 Safe Pantry</h4>
-            {user.safePantry?.map((item, i) => <div key={i} style={{ padding: '12px', borderBottom: '1px solid #f9f9f9', fontSize: '13px', fontWeight: 600 }}>✨ {item}</div>)}
-          </div>
-        </div>
+      {/* Content */}
+      <div style={{
+        position: 'relative', zIndex: 2,
+        maxWidth: '960px', margin: '0 auto',
+        padding: '0 24px',
+        minHeight: '100vh',
+        display: 'flex', flexDirection: 'column',
+      }}>
 
-        {/* MAIN PANEL */}
-        <div style={{ gridColumn: 'span 8', background: 'white', padding: '45px', borderRadius: '50px', boxShadow: '0 20px 50px rgba(0,0,0,0.03)' }}>
-          <div style={{ display: 'flex', gap: '40px', marginBottom: '40px', borderBottom: '2px solid #fcfaf9', paddingBottom: '15px' }}>
-            <button onClick={() => {setActiveTab('pantry'); setProductResult(null);}} style={{ background: 'none', border: 'none', fontSize: '20px', fontWeight: activeTab === 'pantry' ? '800' : '400', color: activeTab === 'pantry' ? '#cb997e' : '#ccc', cursor: 'pointer' }}>Grocery Intel</button>
-            <button onClick={() => {setActiveTab('dining'); setSelectedMenu(null);}} style={{ background: 'none', border: 'none', fontSize: '20px', fontWeight: activeTab === 'dining' ? '800' : '400', color: activeTab === 'dining' ? '#cb997e' : '#ccc', cursor: 'pointer' }}>Dining Safety</button>
-            {user.username === 'admin' && <button onClick={() => setActiveTab('admin')} style={{ background: 'none', border: 'none', fontSize: '20px', fontWeight: activeTab === 'admin' ? '800' : '400', color: activeTab === 'admin' ? '#cb997e' : '#ccc', cursor: 'pointer' }}>Admin View</button>}
-          </div>
-
-          {activeTab === 'pantry' ? (
+        {/* Header */}
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '32px 0 24px',
+          borderBottom: '1px solid rgba(255,255,255,0.15)',
+          marginBottom: '48px',
+        }}>
+          {/* Logo + wordmark */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <img
+              src="/logo.jpg"
+              alt="IngrediSure"
+              style={{
+                height: '70px',
+                objectFit: 'contain',
+                filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.8)) contrast(1.1) brightness(1.1)',
+                borderRadius: '16px',
+                padding: '0',
+                mixBlendMode: 'luminosity',
+              }}
+              onError={e => e.target.style.display = 'none'}
+            />
             <div>
-              <div style={{ display: 'flex', gap: '15px', marginBottom: '30px' }}>
-                <input value={productSearch} onChange={(e) => setProductSearch(e.target.value)} style={{ flex: 1, padding: '20px', borderRadius: '25px', border: '1px solid #eee' }} placeholder="Scan Product (e.g. Nutella)..." />
-                <button onClick={handleProductSearch} style={{ background: '#cb997e', color: 'white', border: 'none', padding: '0 40px', borderRadius: '25px', fontWeight: 'bold', cursor:'pointer' }}>Analyze</button>
+              <div style={{
+                fontSize: '22px', fontWeight: '400', color: '#ffffff',
+                letterSpacing: '3px', fontFamily: 'Georgia, serif',
+                textShadow: '0 2px 12px rgba(0,0,0,0.5)',
+              }}>
+                INGREDI<span style={{ color: '#e8c49a' }}>SURE</span>
               </div>
-              {analyzing && <p style={{textAlign:'center', color:'#cb997e'}}>Processing... 🔍</p>}
-              {productResult && (
-                <div style={{ padding: '30px', borderRadius: '35px', background: productResult.redFlags.length > 0 ? '#fff5f5' : '#f0fff4', border: '1px solid #eee' }}>
-                  <h4 style={{ margin: 0 }}>{productResult.name}</h4>
-                  {productResult.redFlags.length > 0 ? (
-                    <p style={{ color: '#e53e3e', fontWeight: 'bold', marginTop: '15px' }}>⚠️ Flagged Ingredients: {productResult.redFlags.join(", ")}</p>
-                  ) : (
-                    <div>
-                      <p style={{ color: '#2f855a', fontWeight: 'bold', marginTop: '15px' }}>✅ Safe for your profile!</p>
-                      <button onClick={() => saveToPantry(productResult.name)} style={{ background: '#2f855a', color: 'white', border: 'none', padding: '10px 25px', borderRadius: '15px', fontWeight: 'bold', cursor:'pointer' }}>Add to Safe Pantry</button>
-                    </div>
+              <div style={{
+                fontSize: '11px', color: 'rgba(255,255,255,0.95)',
+                letterSpacing: '2px', marginTop: '2px',
+              }}>
+                EAT WELL · CHOOSE WISELY
+              </div>
+            </div>
+          </div>
+
+          {/* User info + logout */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{
+                fontSize: '13px', color: 'rgba(255,255,255,0.7)',
+                letterSpacing: '1px', marginBottom: '4px',
+              }}>
+                WELCOME BACK
+              </div>
+              <div style={{
+                fontSize: '16px', color: '#ffffff', fontWeight: '400',
+                letterSpacing: '1px',
+              }}>
+                {user?.username?.toUpperCase()}
+                {user?.role === 'ROLE_ADMIN' && (
+                  <span style={{
+                    marginLeft: '10px', fontSize: '10px',
+                    border: '1px solid #e8c49a', color: '#e8c49a',
+                    padding: '2px 8px', borderRadius: '2px',
+                    letterSpacing: '2px', verticalAlign: 'middle',
+                  }}>
+                    ADMIN
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Avatar */}
+            <div style={{
+              width: '44px', height: '44px', borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              textAlign: 'center', lineHeight: '44px',
+              background: 'rgba(232, 196, 154, 0.5)',
+            
+              
+              
+            }}>
+              {user?.username?.[0]?.toUpperCase()}
+            </div>
+
+            <button
+              onClick={handleLogout}
+              style={{
+                background: 'transparent',
+                color: '#ffffff',
+                border: '1px solid rgba(255,255,255,0.5)',
+                padding: '10px 28px',
+                borderRadius: '2px',
+                cursor: 'pointer',
+                fontFamily: 'Georgia, serif',
+                fontSize: '12px',
+                letterSpacing: '2px',
+                transition: 'all 0.3s',
+              }}
+              onMouseOver={e => {
+                e.target.style.background = 'rgba(255,255,255,0.1)';
+                e.target.style.borderColor = '#e8c49a';
+                e.target.style.color = '#e8c49a';
+              }}
+              onMouseOut={e => {
+                e.target.style.background = 'transparent';
+                e.target.style.borderColor = 'rgba(255,255,255,0.5)';
+                e.target.style.color = '#ffffff';
+              }}
+            >
+              LOG OUT
+            </button>
+          </div>
+        </div>
+
+        {/* Page title */}
+        <div style={{ marginBottom: '40px' }}>
+          <h1 style={{
+            fontSize: '13px', fontWeight: '400',
+            color: 'rgba(255,255,255,0.95)',
+            letterSpacing: '4px', margin: '0 0 8px',
+            fontFamily: 'Georgia, serif',
+          }}>
+            NAVIGATION
+          </h1>
+          <h2 style={{
+            fontSize: '42px', fontWeight: '400',
+            color: '#ffffff', margin: 0,
+            fontFamily: 'Georgia, serif',
+            textShadow: '0 2px 20px rgba(0,0,0,0.4)',
+            letterSpacing: '1px',
+          }}>
+            Your Dashboard
+          </h2>
+        </div>
+
+        {/* Tiles — transparent glass with colored accent */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '20px',
+          paddingBottom: '48px',
+        }}>
+          {visibleTiles.map(tile => (
+            <div
+              key={tile.id}
+              onClick={() => navigate(tile.route)}
+              style={{
+                background: 'rgba(255, 255, 255, 0.08)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: '4px',
+                padding: '32px 28px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '22px',
+                transition: 'all 0.3s ease',
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+              onMouseOver={e => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.45)';
+                e.currentTarget.style.backdropFilter = 'blur(24px)';
+                e.currentTarget.style.WebkitBackdropFilter = 'blur(24px)';
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.6)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.3)';
+                const title = e.currentTarget.querySelector('h3');
+                const desc = e.currentTarget.querySelector('p');
+                const arrow = e.currentTarget.querySelector('.arrow');
+                if (title) title.style.color = '#1a1a1a';
+                if (desc) desc.style.color = 'rgba(0,0,0,0.6)';
+                if (arrow) arrow.style.color = 'rgba(0,0,0,0.4)';
+              }}
+              onMouseOut={e => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                e.currentTarget.style.backdropFilter = 'blur(12px)';
+                e.currentTarget.style.WebkitBackdropFilter = 'blur(12px)';
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              {/* Colored left accent bar */}
+              <div style={{
+                position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px',
+                background: tile.accent,
+                borderRadius: '4px 0 0 4px',
+              }} />
+
+              {/* Icon — refined minimal SVG */}
+              <div style={{
+                width: '52px', height: '52px',
+                border: `1.5px solid ${tile.accent}`,
+                borderRadius: '2px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+                background: 'rgba(255,255,255,0.05)',
+              }}>
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none"
+                  stroke={tile.accent} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                  {tile.iconPath}
+                </svg>
+              </div>
+
+              {/* Text */}
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                  <h3 style={{
+                    margin: 0, fontSize: '17px', fontWeight: '400',
+                    color: '#ffffff', fontFamily: 'Georgia, serif',
+                    letterSpacing: '0.5px',
+                  }}>
+                    {tile.title}
+                  </h3>
+                  {tile.adminOnly && (
+                    <span style={{
+                      fontSize: '9px', border: '1px solid #e8c49a',
+                      color: '#e8c49a', padding: '2px 6px',
+                      borderRadius: '2px', letterSpacing: '1px',
+                    }}>
+                      ADMIN
+                    </span>
                   )}
                 </div>
-              )}
-            </div>
-          ) : activeTab === 'dining' ? (
-            <div>
-              <div style={{ display: 'flex', gap: '15px', marginBottom: '30px' }}>
-                <input value={zipCode} onChange={(e) => setZipCode(e.target.value)} placeholder="Zip Code..." style={{ flex: 1, padding: '20px', borderRadius: '25px', border: '1px solid #eee' }} />
-                <button onClick={handleRestaurantSearch} style={{ padding: '20px 40px', borderRadius: '25px', background: '#a5a58d', color: 'white', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}>Search</button>
+                <p style={{
+                  margin: 0, fontSize: '13px',
+                  color: 'rgba(255,255,255,0.6)',
+                  lineHeight: '1.6', fontFamily: 'Georgia, serif',
+                  fontStyle: 'italic',
+                }}>
+                  {tile.desc}
+                </p>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                {restaurants.map(r => (
-                  <div key={r.id} onClick={() => analyzeRestaurant(r)} className="res-card" style={{ padding: '25px', borderRadius: '30px', border: '1px solid #f9f9f9', background: '#fcfaf9', cursor: 'pointer' }}>
-                    <h4 style={{ margin: 0 }}>{r.name}</h4>
-                    <p style={{ fontSize: '12px', color: '#b7b7a4' }}>{r.location?.address1}</p>
-                  </div>
-                ))}
+
+              {/* Arrow */}
+              <div style={{
+                fontSize: '18px', color: 'rgba(255,255,255,0.4)',
+                <div className="arrow" style={{
+                fontSize: '18px', color: 'rgba(255,255,255,0.4)',
+                flexShrink: 0, letterSpacing: '-2px',
+                transition: 'color 0.3s',
+              }}>
+                ›
               </div>
-              {selectedMenu && (
-                <div style={{ marginTop:'40px', padding:'35px', background:'#fff', borderRadius:'35px', border:'2px solid #fdf3e7' }}>
-                  <h3 style={{marginTop:0, color:'#cb997e'}}>{selectedMenu.name} Analysis</h3>
-                  {selectedMenu.items.map((item, idx) => (
-                    <div key={idx} style={{ display:'flex', justifyContent:'space-between', alignItems: 'center', padding:'15px 0', borderBottom:'1px solid #eee' }}>
-                      <span style={{fontWeight:600}}>{item.name}</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                        <span style={{color: item.isSafe ? '#2f855a' : '#e53e3e', fontWeight:'bold'}}>{item.isSafe ? '✅ SAFE' : `⚠️ ${item.flags.join(", ")}`}</span>
-                        {item.isSafe && <button onClick={() => saveToPantry(item.name)} style={{ background: '#2f855a', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '12px', cursor: 'pointer' }}>+ Pantry</button>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
-          ) : (
-            <div>
-              <h3>Admin View</h3>
-              {allUsers.map((u, i) => <div key={i} style={{padding:'10px', borderBottom:'1px solid #eee'}}>{u.username} - Active</div>)}
-            </div>
-          )}
+          ))}
         </div>
       </div>
-
-      <style>{`
-        .hover-btn:hover { opacity: 0.8; transform: translateY(-1px); transition: 0.2s; }
-        .res-card:hover { border-color: #cb997e !important; box-shadow: 0 10px 20px rgba(0,0,0,0.05); transition: 0.3s; }
-        .tooltip { position: relative; }
-        .tooltip .tooltiptext {
-          visibility: hidden; width: 140px; background-color: #555; color: #fff; text-align: center;
-          border-radius: 6px; padding: 5px; position: absolute; z-index: 1; bottom: 125%; left: 50%;
-          margin-left: -70px; opacity: 0; transition: opacity 0.3s; font-size: 10px;
-        }
-        .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
-      `}</style>
     </div>
   );
 }
-
-export default Dashboard;
