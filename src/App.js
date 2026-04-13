@@ -5,6 +5,7 @@ import Register from './components/Register';
 import Dashboard from './components/Dashboard';
 import ForgotPassword from './components/ForgotPassword';
 import HealthProfile from './components/HealthProfile';
+import GroceryScanner from './components/GroceryScanner';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<HealthProfile />} />
+        <Route path="/grocery" element={<GroceryScanner />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
