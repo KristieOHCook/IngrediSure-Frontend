@@ -7,6 +7,7 @@ import ForgotPassword from './components/ForgotPassword';
 import HealthProfile from './components/HealthProfile';
 import GroceryScanner from './components/GroceryScanner';
 import RestaurantFinder from './components/RestaurantFinder';
+import AdminDashboard from './components/AdminDashboard';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/profile" element={<HealthProfile />} />
         <Route path="/grocery" element={<GroceryScanner />} />
         <Route path="/restaurant" element={<RestaurantFinder />} />
+        <Route path="/admin" element={<AdminDashboard />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
