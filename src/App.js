@@ -11,6 +11,9 @@ import AdminDashboard from './components/AdminDashboard';
 import Feedback from './components/Feedback';
 import BarcodeScanner from './components/BarcodeScanner';
 import SavedList from './components/SavedList';
+import RecipeSuggestions from './components/RecipeSuggestions';
+import GroceryListManager from './components/GroceryListManager';
+import MealPlanner from './components/MealPlanner';
 
 function App() {
   return (
@@ -27,6 +30,9 @@ function App() {
         <Route path="/feedback" element={<Feedback />} />
         <Route path="/barcode" element={<BarcodeScanner />} />
         <Route path="/saved" element={<SavedList />} />
+        <Route path="/recipes" element={<RecipeSuggestions />} />
+        <Route path="/grocery-lists" element={<GroceryListManager />} />
+        <Route path="/meal-planner" element={<MealPlanner />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>

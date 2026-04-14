@@ -92,6 +92,45 @@ const tiles = [
       <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
     </>,
   },
+  {
+    id: 'recipes',
+    title: 'Recipe Suggestions',
+    desc: 'Healthy recipes with grocery lists for your health profile',
+    route: '/recipes',
+    accent: 'rgba(93, 187, 99, 0.9)',
+    iconPath: <>
+      <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2"/>
+      <path d="M7 2v20M21 15V2v0a5 5 0 00-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/>
+    </>,
+  },
+  {
+    id: 'grocery-lists',
+    title: 'My Grocery Lists',
+    desc: 'Manage your shopping lists and track items',
+    route: '/grocery-lists',
+    accent: 'rgba(232, 196, 154, 0.9)',
+    iconPath: <>
+      <line x1="8" y1="6" x2="21" y2="6"/>
+      <line x1="8" y1="12" x2="21" y2="12"/>
+      <line x1="8" y1="18" x2="21" y2="18"/>
+      <line x1="3" y1="6" x2="3.01" y2="6"/>
+      <line x1="3" y1="12" x2="3.01" y2="12"/>
+      <line x1="3" y1="18" x2="3.01" y2="18"/>
+    </>,
+  },
+  {
+    id: 'meal-planner',
+    title: 'Weekly Meal Planner',
+    desc: '7-day personalized meal plan with safety checks',
+    route: '/meal-planner',
+    accent: 'rgba(74, 159, 212, 0.9)',
+    iconPath: <>
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+      <line x1="16" y1="2" x2="16" y2="6"/>
+      <line x1="8" y1="2" x2="8" y2="6"/>
+      <line x1="3" y1="10" x2="21" y2="10"/>
+    </>,
+  },
 ];
 
 function Tile({ tile, onClick }) {
