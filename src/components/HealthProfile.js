@@ -18,6 +18,8 @@ export default function HealthProfile() {
   const [conditions, setConditions] = useState([]);
   const [avoidances, setAvoidances] = useState([]);
   const [newCondition, setNewCondition] = useState('');
+  const [customCondition, setCustomCondition] = useState('');
+  const [useCustom, setUseCustom] = useState(false);
   const [newAvoidance, setNewAvoidance] = useState('');
   const [profile, setProfile] = useState({
     currentWeight: '', goalWeight: '', heightInches: '',
@@ -52,15 +54,17 @@ export default function HealthProfile() {
   };
 
   const addCondition = async () => {
-    if (!newCondition) return;
+    const conditionToAdd = useCustom ? customCondition.trim() : newCondition;
+    if (!conditionToAdd) return;
     try {
       const res = await axios.post(`${API}/conditions`, {
         userId: user.userId,
-        conditionName: newCondition,
+        conditionName: conditionToAdd,
         severity: 'moderate',
       }, { headers: headers(user) });
       setConditions(prev => [...prev, res.data]);
       setNewCondition('');
+      setCustomCondition('');
       setMessage('Condition added!');
     } catch (err) { setMessage('Error adding condition.'); }
   };
@@ -190,16 +194,43 @@ export default function HealthProfile() {
             ))}
           </div>
 
+          {/* Toggle between dropdown and custom input */}
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
+            <button
+              onClick={() => setUseCustom(false)}
+              style={{ padding: '6px 16px', background: !useCustom ? 'rgba(93,187,99,0.3)' : 'transparent', border: !useCustom ? '1px solid rgba(93,187,99,0.5)' : '1px solid rgba(255,255,255,0.2)', borderRadius: '2px', color: !useCustom ? '#7dd97f' : 'rgba(255,255,255,0.4)', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '11px', letterSpacing: '1px' }}
+            >
+              SELECT FROM LIST
+            </button>
+            <button
+              onClick={() => setUseCustom(true)}
+              style={{ padding: '6px 16px', background: useCustom ? 'rgba(93,187,99,0.3)' : 'transparent', border: useCustom ? '1px solid rgba(93,187,99,0.5)' : '1px solid rgba(255,255,255,0.2)', borderRadius: '2px', color: useCustom ? '#7dd97f' : 'rgba(255,255,255,0.4)', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '11px', letterSpacing: '1px' }}
+            >
+              TYPE CUSTOM CONDITION
+            </button>
+          </div>
+
           {/* Add condition */}
           <div style={{ display: 'flex', gap: '12px' }}>
-            <select
-              value={newCondition}
-              onChange={e => setNewCondition(e.target.value)}
-              style={{ ...inputStyle, flex: 1 }}
-            >
-              <option value="">Select a condition...</option>
-              {CONDITIONS.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
+            {!useCustom ? (
+              <select
+                value={newCondition}
+                onChange={e => setNewCondition(e.target.value)}
+                style={{ ...inputStyle, flex: 1 }}
+              >
+                <option value="">Select a condition...</option>
+                {CONDITIONS.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            ) : (
+              <input
+                type="text"
+                placeholder="e.g. Crohn's Disease, PCOS, Gout, Hashimoto's..."
+                value={customCondition}
+                onChange={e => setCustomCondition(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addCondition()}
+                style={{ ...inputStyle, flex: 1 }}
+              />
+            )}
             <button
               onClick={addCondition}
               style={{ padding: '12px 28px', background: 'rgba(93,187,99,0.3)', border: '1px solid rgba(93,187,99,0.5)', color: '#7dd97f', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '1px', whiteSpace: 'nowrap' }}

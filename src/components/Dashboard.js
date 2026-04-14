@@ -58,6 +58,16 @@ const tiles = [
     </>,
     adminOnly: true,
   },
+  {
+    id: 'feedback',
+    title: 'Share Feedback',
+    desc: 'Rate your experience and suggest improvements',
+    route: '/feedback',
+    accent: 'rgba(180, 120, 200, 0.9)',
+    iconPath: <>
+      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+    </>,
+  },
 ];
 
 function Tile({ tile, onClick }) {

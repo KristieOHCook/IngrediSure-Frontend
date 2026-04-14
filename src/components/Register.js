@@ -1,57 +1,276 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 
-function Register() {
-  const [formData, setFormData] = useState({ username: '', email: '', password: '' });
-  const [errorMessage, setErrorMessage] = useState('');
+const IMAGES = [
+  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=90',
+  'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&q=90',
+  'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=1200&q=90',
+  'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=1200&q=90',
+];
+
+export default function Register() {
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [bgIndex, setBgIndex] = useState(0);
+  const [focusedField, setFocusedField] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setBgIndex(i => (i + 1) % IMAGES.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    setErrorMessage('');
+    setError('');
+
+    if (!username.trim() || !email.trim() || !password.trim()) {
+      setError('Please fill in all fields.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+
+    setLoading(true);
     try {
-      await axios.post('http://localhost:8080/api/users/register', formData);
-      alert("Registration Successful! Please log in.");
+      await axios.post('http://localhost:8080/api/auth/register', {
+        username, email, password
+      });
       navigate('/');
     } catch (err) {
-      const serverResponse = err.response?.data;
-      const message = typeof serverResponse === 'object' ? serverResponse.message : serverResponse;
-      setErrorMessage(message || "Registration failed.");
+      const msg = err.response?.data?.error || 'Registration failed. Username may already exist.';
+      setError(msg);
     }
+    setLoading(false);
   };
 
+  const inputStyle = (field) => ({
+    width: '100%', padding: '14px 16px',
+    background: 'rgba(255,255,255,0.08)',
+    border: focusedField === field
+      ? '1px solid rgba(232,196,154,0.6)'
+      : '1px solid rgba(255,255,255,0.15)',
+    borderRadius: '4px', color: '#ffffff',
+    fontFamily: 'Georgia, serif', fontSize: '14px',
+    outline: 'none', boxSizing: 'border-box',
+    transition: 'border-color 0.3s',
+    letterSpacing: '0.5px',
+  });
+
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#fcfaf9', fontFamily: "'Quicksand', sans-serif" }}>
-      <form onSubmit={handleRegister} style={{ background: 'white', padding: '40px', borderRadius: '40px', boxShadow: '0 20px 50px rgba(0,0,0,0.05)', textAlign: 'center', width: '400px' }}>
-        
-        {/* PROMINENT LOGO */}
-        <img src="/logo.jpg" alt="IngrediSure Logo" style={{ width: '150px', marginBottom: '15px', borderRadius: '12px' }} />
-        
-        <h2 style={{ color: '#a5a58d', marginBottom: '5px' }}>Join Ingredi<span style={{color: '#cb997e', fontWeight: 300 }}>Sure</span></h2>
-        
-        <div style={{ background: '#fdf3e7', padding: '15px', borderRadius: '20px', marginBottom: '20px', textAlign: 'left', fontSize: '12px', color: '#8d8d7a', border: '1px solid #f0e4de' }}>
-          <strong style={{ color: '#cb997e' }}>📝 Account Rules:</strong>
-          <ul style={{ margin: '5px 0 0 15px', padding: 0 }}>
-            <li>Username: At least 3 letters</li>
-            <li>Password: At least 6 characters</li>
-          </ul>
+    <div style={{ minHeight: '100vh', fontFamily: 'Georgia, serif', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+
+      {/* Cycling background */}
+      {IMAGES.map((img, i) => (
+        <div key={i} style={{
+          position: 'fixed', inset: 0, zIndex: 0,
+          backgroundImage: `url(${img})`,
+          backgroundSize: 'cover', backgroundPosition: 'center',
+          opacity: i === bgIndex ? 1 : 0,
+          transition: 'opacity 2s ease-in-out',
+        }} />
+      ))}
+
+      {/* Dark overlay */}
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 1,
+        background: 'linear-gradient(135deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.6) 100%)',
+      }} />
+
+      {/* Register card */}
+      <div style={{
+        position: 'relative', zIndex: 2,
+        width: '100%', maxWidth: '420px',
+        margin: '0 24px',
+        background: 'rgba(255,255,255,0.08)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        border: '1px solid rgba(255,255,255,0.15)',
+        borderRadius: '4px',
+        padding: '48px 40px',
+      }}>
+
+        {/* Logo */}
+        <div style={{ textAlign: 'center', marginBottom: '36px' }}>
+          <img
+            src="/logo.jpg"
+            alt="IngrediSure"
+            style={{
+              height: '80px', objectFit: 'contain',
+              filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.8))',
+              borderRadius: '12px', marginBottom: '16px',
+            }}
+            onError={e => e.target.style.display = 'none'}
+          />
+          <div style={{
+            fontSize: '24px', fontWeight: '400', color: '#ffffff',
+            letterSpacing: '4px', fontFamily: 'Georgia, serif',
+            textShadow: '0 2px 12px rgba(0,0,0,0.5)',
+          }}>
+            INGREDI<span style={{ color: '#e8c49a' }}>SURE</span>
+          </div>
+          <div style={{
+            fontSize: '10px', color: 'rgba(255,255,255,0.6)',
+            letterSpacing: '3px', marginTop: '6px',
+          }}>
+            EAT WELL · CHOOSE WISELY
+          </div>
         </div>
 
-        {errorMessage && <div style={{ color: 'red', marginBottom: '10px', fontSize: '13px' }}>⚠️ {errorMessage}</div>}
+        {/* Divider */}
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginBottom: '32px' }} />
 
-        <input type="text" placeholder="Username" onChange={(e) => setFormData({...formData, username: e.target.value})} style={{ width: '100%', padding: '15px', marginBottom: '15px', borderRadius: '15px', border: '1px solid #eee', boxSizing: 'border-box' }} required />
-        <input type="email" placeholder="Email" onChange={(e) => setFormData({...formData, email: e.target.value})} style={{ width: '100%', padding: '15px', marginBottom: '15px', borderRadius: '15px', border: '1px solid #eee', boxSizing: 'border-box' }} required />
-        <input type="password" placeholder="Password" onChange={(e) => setFormData({...formData, password: e.target.value})} style={{ width: '100%', padding: '15px', marginBottom: '25px', borderRadius: '15px', border: '1px solid #eee', boxSizing: 'border-box' }} required />
-        
-        <button type="submit" style={{ width: '100%', padding: '15px', background: '#cb997e', color: 'white', border: 'none', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer' }}>Create Account</button>
-        
-        <p style={{ marginTop: '20px', fontSize: '14px', color: '#b7b7a4' }}>
-          Already have an account? <Link to="/" style={{ color: '#cb997e', textDecoration: 'none', fontWeight: 'bold' }}>Login here</Link>
-        </p>
-      </form>
+        {/* Title */}
+        <div style={{ marginBottom: '28px' }}>
+          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', letterSpacing: '3px', marginBottom: '6px' }}>
+            GET STARTED
+          </div>
+          <div style={{ fontSize: '22px', color: '#ffffff', fontWeight: '400', letterSpacing: '0.5px' }}>
+            Create your account
+          </div>
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div style={{
+            background: 'rgba(255,107,107,0.15)',
+            border: '1px solid rgba(255,107,107,0.4)',
+            borderRadius: '4px', padding: '12px 16px',
+            color: '#ff9999', fontSize: '13px',
+            marginBottom: '20px', letterSpacing: '0.5px',
+          }}>
+            {error}
+          </div>
+        )}
+
+        {/* Form */}
+        <form onSubmit={handleRegister}>
+
+          {/* Username */}
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', letterSpacing: '2px', marginBottom: '8px' }}>
+              USERNAME
+            </div>
+            <input
+              type="text"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              onFocus={() => setFocusedField('username')}
+              onBlur={() => setFocusedField('')}
+              placeholder="Choose a username"
+              style={inputStyle('username')}
+            />
+          </div>
+
+          {/* Email */}
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', letterSpacing: '2px', marginBottom: '8px' }}>
+              EMAIL
+            </div>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              onFocus={() => setFocusedField('email')}
+              onBlur={() => setFocusedField('')}
+              placeholder="Enter your email"
+              style={inputStyle('email')}
+            />
+          </div>
+
+          {/* Password */}
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', letterSpacing: '2px', marginBottom: '8px' }}>
+              PASSWORD
+            </div>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              onFocus={() => setFocusedField('password')}
+              onBlur={() => setFocusedField('')}
+              placeholder="Minimum 6 characters"
+              style={inputStyle('password')}
+            />
+          </div>
+
+          {/* Confirm Password */}
+          <div style={{ marginBottom: '28px' }}>
+            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', letterSpacing: '2px', marginBottom: '8px' }}>
+              CONFIRM PASSWORD
+            </div>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={e => setConfirmPassword(e.target.value)}
+              onFocus={() => setFocusedField('confirm')}
+              onBlur={() => setFocusedField('')}
+              placeholder="Re-enter your password"
+              style={inputStyle('confirm')}
+            />
+          </div>
+
+          {/* Register button */}
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: '100%', padding: '16px',
+              background: loading ? 'rgba(255,255,255,0.05)' : 'rgba(232,196,154,0.2)',
+              border: '1px solid rgba(232,196,154,0.5)',
+              borderRadius: '4px', color: '#e8c49a',
+              fontFamily: 'Georgia, serif', fontSize: '13px',
+              letterSpacing: '3px', cursor: loading ? 'not-allowed' : 'pointer',
+              transition: 'all 0.3s', marginBottom: '24px',
+            }}
+            onMouseOver={e => {
+              if (!loading) {
+                e.target.style.background = 'rgba(232,196,154,0.35)';
+                e.target.style.color = '#ffffff';
+              }
+            }}
+            onMouseOut={e => {
+              if (!loading) {
+                e.target.style.background = 'rgba(232,196,154,0.2)';
+                e.target.style.color = '#e8c49a';
+              }
+            }}
+          >
+            {loading ? 'CREATING ACCOUNT...' : 'CREATE ACCOUNT'}
+          </button>
+
+          {/* Divider */}
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', marginBottom: '24px' }} />
+
+          {/* Login link */}
+          <div style={{ textAlign: 'center' }}>
+            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', letterSpacing: '0.5px' }}>
+              Already have an account?{' '}
+            </span>
+            <Link to="/" style={{
+              color: '#e8c49a', fontSize: '13px',
+              textDecoration: 'none', letterSpacing: '1px',
+              fontFamily: 'Georgia, serif',
+            }}>
+              Sign In
+            </Link>
+          </div>
+
+        </form>
+      </div>
     </div>
   );
 }
-
-export default Register;

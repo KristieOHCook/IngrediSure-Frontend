@@ -8,6 +8,7 @@ import HealthProfile from './components/HealthProfile';
 import GroceryScanner from './components/GroceryScanner';
 import RestaurantFinder from './components/RestaurantFinder';
 import AdminDashboard from './components/AdminDashboard';
+import Feedback from './components/Feedback';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="/grocery" element={<GroceryScanner />} />
         <Route path="/restaurant" element={<RestaurantFinder />} />
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/feedback" element={<Feedback />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>

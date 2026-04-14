@@ -11,6 +11,8 @@ export default function AdminDashboard() {
   const [analytics, setAnalytics] = useState(null);
   const [users, setUsers] = useState([]);
   const [activeTab, setActiveTab] = useState('overview');
+  const [feedback, setFeedback] = useState([]);
+  const [feedbackSummary, setFeedbackSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
 
@@ -28,12 +30,16 @@ export default function AdminDashboard() {
 
   const loadData = async (u) => {
     try {
-      const [analyticsRes, usersRes] = await Promise.all([
+      const [analyticsRes, usersRes, feedbackRes, summaryRes] = await Promise.all([
         axios.get(`${API}/admin/analytics`, { headers: headers(u) }),
         axios.get(`${API}/admin/users`, { headers: headers(u) }),
+        axios.get(`${API}/feedback/all`, { headers: headers(u) }),
+        axios.get(`${API}/feedback/summary`, { headers: headers(u) }),
       ]);
       setAnalytics(analyticsRes.data);
       setUsers(usersRes.data || []);
+      setFeedback(feedbackRes.data || []);
+      setFeedbackSummary(summaryRes.data);
     } catch (err) {
       console.error('Load error:', err);
     }
@@ -42,7 +48,7 @@ export default function AdminDashboard() {
 
   const promoteUser = async (userId) => {
     try {
-      await axios.put(`${API}/admin/promote/${userId}`, {}, { headers: headers(user) });
+      await axios.put(`${API}/admin/users/${userId}/promote`, {}, { headers: headers(user) });
       setUsers(prev => prev.map(u =>
         u.id === userId ? { ...u, role: 'ROLE_ADMIN' } : u
       ));
@@ -52,12 +58,20 @@ export default function AdminDashboard() {
 
   const deactivateUser = async (userId) => {
     try {
-      await axios.put(`${API}/admin/deactivate/${userId}`, {}, { headers: headers(user) });
+      await axios.put(`${API}/admin/users/${userId}/deactivate`, {}, { headers: headers(user) });
       setUsers(prev => prev.map(u =>
         u.id === userId ? { ...u, active: false } : u
       ));
       setMessage('User deactivated.');
     } catch (err) { setMessage('Error deactivating user.'); }
+  };
+
+  const deleteFeedback = async (id) => {
+    try {
+      await axios.delete(`${API}/feedback/${id}`, { headers: headers(user) });
+      setFeedback(prev => prev.filter(f => f.id !== id));
+      setMessage('Review deleted.');
+    } catch (err) { setMessage('Error deleting review.'); }
   };
 
   const sectionStyle = {
@@ -118,6 +132,7 @@ export default function AdminDashboard() {
         <div style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
           <button style={tabStyle(activeTab === 'overview')} onClick={() => setActiveTab('overview')}>OVERVIEW</button>
           <button style={tabStyle(activeTab === 'users')} onClick={() => setActiveTab('users')}>USERS</button>
+          <button style={tabStyle(activeTab === 'feedback')} onClick={() => setActiveTab('feedback')}>FEEDBACK</button>
         </div>
 
         {/* Overview Tab */}
@@ -163,6 +178,186 @@ export default function AdminDashboard() {
               </div>
             </div>
           </>
+        )}
+
+        {/* Feedback Tab */}
+        {activeTab === 'feedback' && (
+          <div>
+            {/* Summary cards */}
+            {feedbackSummary && (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
+                  {[
+                    { label: 'TOTAL REVIEWS', value: feedbackSummary.totalReviews, color: '#74b9ff' },
+                    { label: 'AVERAGE RATING', value: `${feedbackSummary.averageRating} ★`, color: '#e8c49a' },
+                    { label: '5 STAR REVIEWS', value: feedbackSummary.fiveStars, color: '#7dd97f' },
+                  ].map(stat => (
+                    <div key={stat.label} style={{ ...sectionStyle, textAlign: 'center', marginBottom: 0 }}>
+                      <div style={{ fontSize: '36px', fontWeight: '300', color: stat.color, marginBottom: '8px' }}>{stat.value}</div>
+                      <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', letterSpacing: '2px' }}>{stat.label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Star rating breakdown */}
+                <div style={{ ...sectionStyle, marginBottom: '20px' }}>
+                  <h2 style={{ margin: '0 0 20px', fontSize: '13px', fontWeight: '400', color: 'rgba(255,255,255,0.6)', letterSpacing: '3px' }}>
+                    RATING BREAKDOWN
+                  </h2>
+                  {[
+                    { stars: 5, count: feedbackSummary.fiveStars },
+                    { stars: 4, count: feedbackSummary.fourStars },
+                    { stars: 3, count: feedbackSummary.threeStars },
+                    { stars: 2, count: feedbackSummary.twoStars },
+                    { stars: 1, count: feedbackSummary.oneStar },
+                  ].map(row => {
+                    const pct = feedbackSummary.totalReviews > 0
+                      ? Math.round((row.count / feedbackSummary.totalReviews) * 100)
+                      : 0;
+                    return (
+                      <div key={row.stars} style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+                        <div style={{ color: '#e8c49a', fontSize: '14px', width: '80px', flexShrink: 0 }}>
+                          {'★'.repeat(row.stars)}{'☆'.repeat(5 - row.stars)}
+                        </div>
+                        <div style={{ flex: 1, background: 'rgba(255,255,255,0.08)', borderRadius: '2px', height: '8px' }}>
+                          <div style={{ width: `${pct}%`, background: '#e8c49a', height: '100%', borderRadius: '2px', transition: 'width 0.5s ease' }} />
+                        </div>
+                        <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', width: '40px', textAlign: 'right' }}>
+                          {row.count}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* Individual reviews */}
+            <div style={sectionStyle}>
+              <h2 style={{ margin: '0 0 20px', fontSize: '13px', fontWeight: '400', color: 'rgba(255,255,255,0.6)', letterSpacing: '3px' }}>
+                ALL REVIEWS — {feedback.length} SUBMITTED
+              </h2>
+              {feedback.length === 0 ? (
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontStyle: 'italic', fontSize: '14px' }}>
+                  No feedback submitted yet.
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {feedback.map((f, i) => (
+                    <div key={f.id || i} style={{ padding: '20px 24px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '4px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                        <div>
+                          <div style={{ color: '#ffffff', fontSize: '15px', marginBottom: '4px' }}>
+                            {f.username || 'Anonymous'}
+                          </div>
+                          <div style={{ color: '#e8c49a', fontSize: '18px', letterSpacing: '2px' }}>
+                            {'★'.repeat(f.rating)}
+                            <span style={{ color: 'rgba(255,255,255,0.2)' }}>{'★'.repeat(5 - f.rating)}</span>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>
+                            {f.submittedAt ? new Date(f.submittedAt).toLocaleDateString() : ''}
+                          </div>
+                          <button
+                            onClick={() => deleteFeedback(f.id)}
+                            style={{ padding: '4px 12px', background: 'rgba(255,107,107,0.15)', border: '1px solid rgba(255,107,107,0.4)', borderRadius: '2px', color: '#ff9999', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '11px', letterSpacing: '1px' }}
+                          >
+                            DELETE
+                          </button>
+                        </div>
+                      </div>
+                      {f.liked && (
+                        <div style={{ marginBottom: '8px' }}>
+                          <span style={{ fontSize: '10px', color: '#7dd97f', letterSpacing: '2px' }}>LIKED: </span>
+                          <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', fontStyle: 'italic' }}>{f.liked}</span>
+                        </div>
+                      )}
+                      {f.disliked && (
+                        <div style={{ marginBottom: '8px' }}>
+                          <span style={{ fontSize: '10px', color: '#ff9999', letterSpacing: '2px' }}>IMPROVE: </span>
+                          <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', fontStyle: 'italic' }}>{f.disliked}</span>
+                        </div>
+                      )}
+                      {f.suggestion && (
+                        <div>
+                          <span style={{ fontSize: '10px', color: '#74b9ff', letterSpacing: '2px' }}>SUGGESTION: </span>
+                          <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', fontStyle: 'italic' }}>{f.suggestion}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Users Tab */}
+        {activeTab === 'users' && (
+          <div>
+            {/* Summary cards */}
+            {feedbackSummary && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
+                {[
+                  { label: 'TOTAL REVIEWS', value: feedbackSummary.totalReviews, color: '#74b9ff' },
+                  { label: 'AVERAGE RATING', value: `${feedbackSummary.averageRating} ★`, color: '#e8c49a' },
+                  { label: '5 STAR REVIEWS', value: feedbackSummary.fiveStars, color: '#7dd97f' },
+                ].map(stat => (
+                  <div key={stat.label} style={{ ...sectionStyle, textAlign: 'center', marginBottom: 0 }}>
+                    <div style={{ fontSize: '36px', fontWeight: '300', color: stat.color, marginBottom: '8px' }}>{stat.value}</div>
+                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', letterSpacing: '2px' }}>{stat.label}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Individual reviews */}
+            <div style={sectionStyle}>
+              <h2 style={{ margin: '0 0 20px', fontSize: '13px', fontWeight: '400', color: 'rgba(255,255,255,0.6)', letterSpacing: '3px' }}>
+                ALL REVIEWS — {feedback.length} SUBMITTED
+              </h2>
+              {feedback.length === 0 ? (
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontStyle: 'italic', fontSize: '14px' }}>No feedback submitted yet.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {feedback.map((f, i) => (
+                    <div key={i} style={{ padding: '20px 24px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '4px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                        <div style={{ color: '#ffffff', fontSize: '15px' }}>
+                          {f.user?.username || 'Anonymous'}
+                        </div>
+                        <div style={{ color: '#e8c49a', fontSize: '16px' }}>
+                          {'★'.repeat(f.rating)}{'☆'.repeat(5 - f.rating)}
+                        </div>
+                      </div>
+                      {f.liked && (
+                        <div style={{ marginBottom: '8px' }}>
+                          <span style={{ fontSize: '10px', color: '#7dd97f', letterSpacing: '2px' }}>LIKED: </span>
+                          <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', fontStyle: 'italic' }}>{f.liked}</span>
+                        </div>
+                      )}
+                      {f.disliked && (
+                        <div style={{ marginBottom: '8px' }}>
+                          <span style={{ fontSize: '10px', color: '#ff9999', letterSpacing: '2px' }}>IMPROVE: </span>
+                          <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', fontStyle: 'italic' }}>{f.disliked}</span>
+                        </div>
+                      )}
+                      {f.suggestion && (
+                        <div>
+                          <span style={{ fontSize: '10px', color: '#74b9ff', letterSpacing: '2px' }}>SUGGESTION: </span>
+                          <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', fontStyle: 'italic' }}>{f.suggestion}</span>
+                        </div>
+                      )}
+                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginTop: '8px' }}>
+                        {new Date(f.submittedAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         )}
 
         {/* Users Tab */}

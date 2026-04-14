@@ -5,6 +5,55 @@ import axios from 'axios';
 const API = 'http://localhost:8080/api';
 const BG = 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=90';
 
+const getModificationTips = (itemName, flaggedIngredients, cuisine) => {
+  const name = (itemName || '').toLowerCase();
+  const flags = (flaggedIngredients || []).map(f => f.toLowerCase());
+  const tips = [];
+
+  if (flags.some(f => f.includes('sodium') || f.includes('salt'))) {
+    tips.push('Request no added salt');
+    tips.push('Ask for sauce on the side');
+  }
+  if (flags.some(f => f.includes('sugar') || f.includes('syrup') || f.includes('corn syrup'))) {
+    tips.push('Ask for no added sugar or sweetener');
+    tips.push('Request unsweetened preparation');
+  }
+  if (flags.some(f => f.includes('butter') || f.includes('saturated fat'))) {
+    tips.push('Request olive oil instead of butter');
+    tips.push('Ask for light preparation');
+  }
+  if (flags.some(f => f.includes('gluten') || f.includes('wheat') || f.includes('flour'))) {
+    tips.push('Ask if a gluten-free version is available');
+    tips.push('Request no breading or croutons');
+  }
+  if (flags.some(f => f.includes('cheese') || f.includes('dairy') || f.includes('lactose'))) {
+    tips.push('Request no cheese');
+    tips.push('Ask for dairy-free preparation if available');
+  }
+  if (flags.some(f => f.includes('bacon') || f.includes('pork'))) {
+    tips.push('Ask to omit bacon or pork');
+    tips.push('Request a protein substitution');
+  }
+  if (name.includes('fried') || name.includes('crispy')) {
+    tips.push('Ask if grilled version is available');
+    tips.push('Request baked instead of fried');
+  }
+  if (tips.length === 0) {
+    tips.push('Ask your server about ingredient modifications');
+    tips.push('Request preparation details from the kitchen');
+  }
+  return tips.slice(0, 3);
+};
+
+const getSaferAlternatives = (restaurant, currentItem, verdicts) => {
+  return restaurant.menu
+    .filter(item =>
+      item.name !== currentItem.name &&
+      verdicts[item.name]?.safetyVerdict === 'Safe'
+    )
+    .slice(0, 2);
+};
+
 const SAMPLE_RESTAURANTS = [
   {
     id: 1, name: 'The Garden Table', cuisine: 'Farm-to-Table', rating: 4.8,
@@ -68,62 +117,10 @@ const SAMPLE_RESTAURANTS = [
   },
 ];
 
-export default function RestaurantFinder() {
-  const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [zipCode, setZipCode] = useState('');
-  const [restaurants, setRestaurants] = useState([]);
-  const [selected, setSelected] = useState(null);
-  const [menuVerdicts, setMenuVerdicts] = useState({});
-  const [loadingVerdicts, setLoadingVerdicts] = useState(false);
-  const [searched, setSearched] = useState(false);
-
-  useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (!stored) { navigate('/'); return; }
-    const parsed = JSON.parse(stored);
-    if (!parsed?.token) { navigate('/'); return; }
-    setUser(parsed);
-  }, [navigate]);
-
-  const searchRestaurants = () => {
-    if (!zipCode.trim()) return;
-    // Shuffle restaurants slightly based on zip for variety
-    const shuffled = [...SAMPLE_RESTAURANTS].sort(() => Math.random() - 0.3);
-    setRestaurants(shuffled);
-    setSearched(true);
-    setSelected(null);
-    setMenuVerdicts({});
-  };
-
-  const selectRestaurant = async (restaurant) => {
-    setSelected(restaurant);
-    setMenuVerdicts({});
-    setLoadingVerdicts(true);
-
-    const headers = { Authorization: `Bearer ${user.token}` };
-    const verdicts = {};
-
-    for (const item of restaurant.menu) {
-      try {
-        const res = await axios.post(`${API}/menu`, {
-          itemName: item.name,
-          ingredients: item.ingredients,
-          sodiumLevel: 0,
-          potassiumLevel: 0,
-          sugarLevel: 0,
-          restaurantName: restaurant.name,
-          dietCategory: restaurant.cuisine,
-        }, { headers });
-        verdicts[item.name] = res.data;
-      } catch (err) {
-        verdicts[item.name] = { safetyVerdict: 'Unknown', flaggedIngredients: [] };
-      }
-    }
-
-    setMenuVerdicts(verdicts);
-    setLoadingVerdicts(false);
-  };
+function MenuItem({ item, verdict, restaurant, allVerdicts, cuisine }) {
+  const [expanded, setExpanded] = useState(false);
+  const v = verdict?.safetyVerdict;
+  const isActionable = v === 'Caution' || v === 'Unsafe';
 
   const verdictColor = (v) => {
     if (v === 'Safe') return '#7dd97f';
@@ -144,6 +141,157 @@ export default function RestaurantFinder() {
     if (v === 'Caution') return '⚠';
     if (v === 'Unsafe') return '✗';
     return '·';
+  };
+
+  const tips = isActionable
+    ? getModificationTips(item.name, verdict?.flaggedIngredients, cuisine)
+    : [];
+
+  const saferAlts = isActionable
+    ? getSaferAlternatives(restaurant, item, allVerdicts)
+    : [];
+
+  return (
+    <div style={{
+      background: verdict ? verdictBg(v) : 'rgba(255,255,255,0.04)',
+      border: `1px solid ${verdict ? verdictColor(v) + '40' : 'rgba(255,255,255,0.08)'}`,
+      borderRadius: '4px', transition: 'all 0.3s',
+      overflow: 'hidden',
+    }}>
+      {/* Main row */}
+      <div
+        style={{ padding: '20px 24px', cursor: isActionable ? 'pointer' : 'default' }}
+        onClick={() => isActionable && setExpanded(!expanded)}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+              <div style={{ color: '#ffffff', fontSize: '16px' }}>{item.name}</div>
+              {isActionable && (
+                <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', letterSpacing: '1px' }}>
+                  {expanded ? '▲ HIDE TIPS' : '▼ SEE TIPS'}
+                </span>
+              )}
+            </div>
+            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', fontStyle: 'italic' }}>
+              {item.ingredients}
+            </div>
+          </div>
+          {verdict && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, marginLeft: '16px' }}>
+              <span style={{ fontSize: '20px', color: verdictColor(v) }}>{verdictIcon(v)}</span>
+              <span style={{ fontSize: '12px', fontWeight: '700', color: verdictColor(v), letterSpacing: '1px' }}>
+                {v?.toUpperCase()}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Flagged ingredients */}
+        {verdict?.flaggedIngredients?.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '10px' }}>
+            {verdict.flaggedIngredients.map((ing, j) => (
+              <span key={j} style={{ padding: '3px 10px', background: 'rgba(255,107,107,0.2)', border: '1px solid rgba(255,107,107,0.3)', borderRadius: '2px', color: '#ff9999', fontSize: '11px' }}>
+                {ing}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Expanded tips section */}
+      {expanded && isActionable && (
+        <div style={{ padding: '0 24px 24px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+
+          {/* Modification tips */}
+          <div style={{ marginTop: '16px', marginBottom: saferAlts.length > 0 ? '16px' : '0' }}>
+            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', letterSpacing: '2px', marginBottom: '10px' }}>
+              HOW TO MAKE IT SAFER
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {tips.map((tip, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#f0c040', flexShrink: 0 }} />
+                  <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '13px', fontStyle: 'italic', fontFamily: 'Georgia, serif' }}>
+                    {tip}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Safer alternatives from same restaurant */}
+          {saferAlts.length > 0 && (
+            <div>
+              <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', letterSpacing: '2px', marginBottom: '10px' }}>
+                SAFER OPTIONS AT THIS RESTAURANT
+              </div>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                {saferAlts.map((alt, i) => (
+                  <div key={i} style={{ padding: '8px 16px', background: 'rgba(93,187,99,0.15)', border: '1px solid rgba(93,187,99,0.4)', borderRadius: '2px', color: '#7dd97f', fontSize: '13px', fontFamily: 'Georgia, serif' }}>
+                    ✓ {alt.name}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function RestaurantFinder() {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [zipCode, setZipCode] = useState('');
+  const [restaurants, setRestaurants] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [menuVerdicts, setMenuVerdicts] = useState({});
+  const [loadingVerdicts, setLoadingVerdicts] = useState(false);
+  const [searched, setSearched] = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('user');
+    if (!stored) { navigate('/'); return; }
+    const parsed = JSON.parse(stored);
+    if (!parsed?.token) { navigate('/'); return; }
+    setUser(parsed);
+  }, [navigate]);
+
+  const searchRestaurants = () => {
+    if (!zipCode.trim()) return;
+    const shuffled = [...SAMPLE_RESTAURANTS].sort(() => Math.random() - 0.3);
+    setRestaurants(shuffled);
+    setSearched(true);
+    setSelected(null);
+    setMenuVerdicts({});
+  };
+
+  const selectRestaurant = async (restaurant) => {
+    setSelected(restaurant);
+    setMenuVerdicts({});
+    setLoadingVerdicts(true);
+    const headers = { Authorization: `Bearer ${user.token}` };
+    const verdicts = {};
+    for (const item of restaurant.menu) {
+      try {
+        const res = await axios.post(`${API}/menu`, {
+          itemName: item.name,
+          ingredients: item.ingredients,
+          sodiumLevel: 0,
+          potassiumLevel: 0,
+          sugarLevel: 0,
+          restaurantName: restaurant.name,
+          dietCategory: restaurant.cuisine,
+        }, { headers });
+        verdicts[item.name] = res.data;
+      } catch (err) {
+        verdicts[item.name] = { safetyVerdict: 'Unknown', flaggedIngredients: [] };
+      }
+    }
+    setMenuVerdicts(verdicts);
+    setLoadingVerdicts(false);
   };
 
   const sectionStyle = {
@@ -227,7 +375,7 @@ export default function RestaurantFinder() {
                   onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                 >
                   <div>
-                    <div style={{ color: '#ffffff', fontSize: '17px', marginBottom: '6px', fontWeight: '400' }}>{r.name}</div>
+                    <div style={{ color: '#ffffff', fontSize: '17px', marginBottom: '6px' }}>{r.name}</div>
                     <div style={{ display: 'flex', gap: '16px' }}>
                       <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontStyle: 'italic' }}>{r.cuisine}</span>
                       <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>{r.address}</span>
@@ -262,9 +410,12 @@ export default function RestaurantFinder() {
               </button>
             </div>
 
-            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', letterSpacing: '3px', marginBottom: '16px' }}>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', letterSpacing: '3px', marginBottom: '8px' }}>
               MENU — SAFETY ANALYSIS
             </div>
+            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', fontStyle: 'italic', marginBottom: '16px' }}>
+              Click any Caution or Unsafe item to see how to make it safer
+            </p>
 
             {loadingVerdicts && (
               <div style={{ textAlign: 'center', padding: '24px', color: 'rgba(255,255,255,0.6)', letterSpacing: '2px', fontSize: '13px' }}>
@@ -273,52 +424,27 @@ export default function RestaurantFinder() {
             )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {selected.menu.map((item, i) => {
-                const v = menuVerdicts[item.name];
-                return (
-                  <div key={i} style={{ padding: '20px 24px', background: v ? verdictBg(v.safetyVerdict) : 'rgba(255,255,255,0.04)', border: `1px solid ${v ? verdictColor(v.safetyVerdict) + '40' : 'rgba(255,255,255,0.08)'}`, borderRadius: '4px', transition: 'all 0.3s' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: v?.flaggedIngredients?.length > 0 ? '12px' : '0' }}>
-                      <div>
-                        <div style={{ color: '#ffffff', fontSize: '16px', marginBottom: '4px' }}>{item.name}</div>
-                        <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', fontStyle: 'italic' }}>{item.ingredients}</div>
-                      </div>
-                      {v && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, marginLeft: '16px' }}>
-                          <span style={{ fontSize: '20px', color: verdictColor(v.safetyVerdict) }}>{verdictIcon(v.safetyVerdict)}</span>
-                          <span style={{ fontSize: '12px', fontWeight: '700', color: verdictColor(v.safetyVerdict), letterSpacing: '1px' }}>{v.safetyVerdict?.toUpperCase()}</span>
-                        </div>
-                      )}
-                      {!v && !loadingVerdicts && (
-                        <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>—</div>
-                      )}
-                    </div>
-
-                    {v?.flaggedIngredients?.length > 0 && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
-                        {v.flaggedIngredients.map((ing, j) => (
-                          <span key={j} style={{ padding: '3px 10px', background: 'rgba(255,107,107,0.2)', border: '1px solid rgba(255,107,107,0.3)', borderRadius: '2px', color: '#ff9999', fontSize: '11px' }}>
-                            {ing}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {selected.menu.map((item, i) => (
+                <MenuItem
+                  key={i}
+                  item={item}
+                  verdict={menuVerdicts[item.name]}
+                  restaurant={selected}
+                  allVerdicts={menuVerdicts}
+                  cuisine={selected.cuisine}
+                />
+              ))}
             </div>
 
-            {/* Legend */}
             {!loadingVerdicts && Object.keys(menuVerdicts).length > 0 && (
               <div style={{ display: 'flex', gap: '20px', marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
                 <span style={{ color: '#7dd97f', fontSize: '12px', letterSpacing: '1px' }}>✓ SAFE</span>
-                <span style={{ color: '#f0c040', fontSize: '12px', letterSpacing: '1px' }}>⚠ CAUTION</span>
-                <span style={{ color: '#ff6b6b', fontSize: '12px', letterSpacing: '1px' }}>✗ UNSAFE</span>
-                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', fontStyle: 'italic', marginLeft: 'auto' }}>Based on your health profile</span>
+                <span style={{ color: '#f0c040', fontSize: '12px', letterSpacing: '1px' }}>⚠ CAUTION — click to see tips</span>
+                <span style={{ color: '#ff6b6b', fontSize: '12px', letterSpacing: '1px' }}>✗ UNSAFE — click to see tips</span>
               </div>
             )}
           </div>
         )}
-
       </div>
     </div>
   );
