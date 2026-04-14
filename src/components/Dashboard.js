@@ -68,6 +68,30 @@ const tiles = [
       <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
     </>,
   },
+  {
+    id: 'barcode',
+    title: 'Barcode Scanner',
+    desc: 'Scan any product barcode for instant safety check',
+    route: '/barcode',
+    accent: 'rgba(255, 107, 53, 0.9)',
+    iconPath: <>
+      <path d="M6 2H4a2 2 0 00-2 2v2M18 2h2a2 2 0 012 2v2M6 22H4a2 2 0 01-2-2v-2M18 22h2a2 2 0 002-2v-2"/>
+      <line x1="7" y1="7" x2="7" y2="17"/>
+      <line x1="10" y1="7" x2="10" y2="17"/>
+      <line x1="13" y1="7" x2="13" y2="17"/>
+      <line x1="16" y1="7" x2="16" y2="17"/>
+    </>,
+  },
+  {
+    id: 'saved',
+    title: 'My Saved Products',
+    desc: 'View your personal safe and flagged product history',
+    route: '/saved',
+    accent: 'rgba(116, 185, 255, 0.9)',
+    iconPath: <>
+      <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+    </>,
+  },
 ];
 
 function Tile({ tile, onClick }) {

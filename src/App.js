@@ -9,6 +9,8 @@ import GroceryScanner from './components/GroceryScanner';
 import RestaurantFinder from './components/RestaurantFinder';
 import AdminDashboard from './components/AdminDashboard';
 import Feedback from './components/Feedback';
+import BarcodeScanner from './components/BarcodeScanner';
+import SavedList from './components/SavedList';
 
 function App() {
   return (
@@ -23,6 +25,8 @@ function App() {
         <Route path="/restaurant" element={<RestaurantFinder />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/feedback" element={<Feedback />} />
+        <Route path="/barcode" element={<BarcodeScanner />} />
+        <Route path="/saved" element={<SavedList />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
