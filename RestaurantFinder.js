@@ -71,6 +71,7 @@ const SAMPLE_RESTAURANTS = [
 
 export default function RestaurantFinder() {
   const navigate = useNavigate();
+  const { t } = useAccessibility();
   const [user, setUser] = useState(null);
   const [zipCode, setZipCode] = useState('');
   const [restaurants, setRestaurants] = useState([]);

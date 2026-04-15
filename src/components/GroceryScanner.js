@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import LoadingScreen from './LoadingScreen';
+import ReadAloudButton from './ReadAloudButton';
+import { useAccessibility } from '../AccessibilityContext';
 
 const API = 'http://localhost:8080/api';
 const BG = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200&q=90';
@@ -50,6 +52,7 @@ const getAlternatives = (productName, flaggedIngredients) => {
 
 export default function GroceryScanner() {
   const navigate = useNavigate();
+  const { t, simpleMode, highContrast, fontSize } = useAccessibility();
   const [user, setUser] = useState(null);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
@@ -380,6 +383,16 @@ export default function GroceryScanner() {
           </div>
         )}
 
+      {/* Legal footer */}
+        <div style={{ textAlign: 'center', padding: '20px 0 40px', borderTop: '1px solid rgba(255,255,255,0.06)', marginTop: '20px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', fontStyle: 'italic', margin: '0 0 6px', lineHeight: '1.7' }}>
+            {t.safetyDisclaimer}
+          </p>
+          <span onClick={() => navigate('/legal')}
+            style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', letterSpacing: '1px', cursor: 'pointer', textDecoration: 'underline' }}>
+            {t.notMedicalAdvice} View Legal Disclaimers
+          </span>
+        </div>
       </div>
     </div>
   );

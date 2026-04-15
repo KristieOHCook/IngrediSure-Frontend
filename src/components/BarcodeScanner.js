@@ -8,6 +8,7 @@ const BG = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200&q=9
 
 export default function BarcodeScanner() {
   const navigate = useNavigate();
+  
   const [user, setUser] = useState(null);
   const [scanning, setScanning] = useState(false);
   const [scannedCode, setScannedCode] = useState('');

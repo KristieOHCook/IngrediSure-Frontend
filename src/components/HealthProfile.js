@@ -15,6 +15,7 @@ const BG = 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=1200&
 
 export default function HealthProfile() {
   const navigate = useNavigate();
+  const { t } = useAccessibility();
   const [user, setUser] = useState(null);
   const [conditions, setConditions] = useState([]);
   const [avoidances, setAvoidances] = useState([]);

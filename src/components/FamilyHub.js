@@ -33,7 +33,7 @@ export default function FamilyHub() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
   const [message, setMessage] = useState('');
-  const [activeView, setActiveView] = useState('hub');
+  
 
   // Form state
   const [memberName, setMemberName] = useState('');

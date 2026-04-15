@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
- import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { useAccessibility } from '../AccessibilityContext';
 import SMSReminder from './SMSReminder';
+import SimpleModeWrapper from './SimpleModeWrapper';
 
 const IMAGES = [
   'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=90',
@@ -194,6 +196,7 @@ function ContentTile({ tile, onClick, isMobile }) {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { simpleMode, t } = useAccessibility();
   const [user, setUser] = useState(null);
   const [bgIndex, setBgIndex] = useState(0);
   const [activeSection, setActiveSection] = useState(null);
@@ -288,7 +291,7 @@ export default function Dashboard() {
           {!activeSection && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 'calc(100vh - 152px)', padding: '24px 20px', textAlign: 'center' }}>
               <div style={{ fontSize: '12px', color: '#ffffff', letterSpacing: '4px', marginBottom: '8px', fontFamily: 'Georgia, serif', textShadow: '0 2px 8px rgba(0,0,0,0.8)', fontWeight: '300' }}>
-                WELCOME TO INGREDISURE
+                {t.welcome.toUpperCase()}
               </div>
               <div style={{ height: '1px', background: 'rgba(255,255,255,0.3)', width: '160px', margin: '0 auto 28px' }} />
               <h1 style={{ fontSize: '40px', fontWeight: '300', color: '#ffffff', fontFamily: 'Georgia, serif', margin: '0 0 8px', textShadow: '0 4px 24px rgba(0,0,0,0.7)', letterSpacing: '2px' }}>
@@ -391,7 +394,7 @@ export default function Dashboard() {
 
           {/* Nav label */}
           <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', letterSpacing: '3px', marginBottom: '10px' }}>
-            YOUR DASHBOARD
+            {t.dashboard.toUpperCase()}
           </div>
 
           {/* Nav items */}
@@ -448,7 +451,7 @@ export default function Dashboard() {
               {/* TOP */}
               <div style={{ textAlign: 'center', width: '100%' }}>
                 <div style={{ fontSize: '20px', color: '#ffffff', letterSpacing: '5px', marginBottom: '10px', fontFamily: 'Georgia, serif', textShadow: '0 2px 8px rgba(0,0,0,0.8)', fontWeight: '300' }}>
-                  WELCOME TO INGREDISURE
+                  {t.welcome.toUpperCase()}
                 </div>
                 <div style={{ height: '1px', background: 'rgba(255,255,255,0.3)', width: '220px', margin: '0 auto' }} />
               </div>
@@ -456,10 +459,10 @@ export default function Dashboard() {
               {/* MIDDLE */}
               <div style={{ textAlign: 'center', width: '100%' }}>
                 <h1 style={{ fontSize: '62px', fontWeight: '300', color: '#ffffff', fontFamily: 'Georgia, serif', margin: '0 0 12px', textShadow: '0 4px 32px rgba(0,0,0,0.7)', letterSpacing: '3px', lineHeight: '1.2' }}>
-                  Eat Well.
+                  {t.tagline.split('.')[0]}.
                 </h1>
                 <h1 style={{ fontSize: '62px', fontWeight: '300', color: '#e8c49a', fontFamily: 'Georgia, serif', margin: '0 0 28px', textShadow: '0 4px 32px rgba(0,0,0,0.7)', letterSpacing: '3px' }}>
-                  Choose Wisely.
+                  {t.tagline.split('.')[1]}.
                 </h1>
                 <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '15px', fontStyle: 'italic', fontFamily: 'Georgia, serif', lineHeight: '1.8', maxWidth: '380px', margin: '0 auto', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
                   Your personalized health intelligence hub.<br />
@@ -497,7 +500,7 @@ export default function Dashboard() {
                 <div>
                   <div style={{ marginBottom: '32px' }}>
                     <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)', letterSpacing: '3px', marginBottom: '8px' }}>
-                      WELCOME TO INGREDISURE
+                      {t.welcome.toUpperCase()}
                     </div>
                     <h2 style={{ margin: '0 0 20px', fontSize: '34px', fontWeight: '300', color: '#ffffff', fontFamily: 'Georgia, serif', letterSpacing: '0.5px', textShadow: '0 2px 16px rgba(0,0,0,0.5)' }}>
                       Begin Your Journey

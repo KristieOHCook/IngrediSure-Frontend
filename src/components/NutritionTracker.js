@@ -180,6 +180,7 @@ const DRUG_FOOD_INTERACTIONS = {
 
 export default function NutritionTracker() {
   const navigate = useNavigate();
+  const { t } = useAccessibility();
   const [user, setUser] = useState(null);
   const [todayLogs, setTodayLogs] = useState([]);
   const [medications, setMedications] = useState([]);

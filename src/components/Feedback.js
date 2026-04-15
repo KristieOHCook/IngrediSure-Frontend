@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import LoadingScreen from './LoadingScreen';
+
 
 const API = 'http://localhost:8080/api';
 const BG = 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=1200&q=90';

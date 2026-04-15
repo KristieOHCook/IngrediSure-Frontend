@@ -11,15 +11,7 @@ const MEAL_CATEGORIES = [
   'Pasta', 'Breakfast', 'Dessert', 'Salad', 'Soup',
 ];
 
-const CUISINE_TYPES = [
-  'American', 'Italian', 'Asian', 'Mexican', 'Mediterranean',
-  'Indian', 'French', 'Japanese', 'Greek', 'Thai',
-];
 
-const DIET_PREFERENCES = [
-  'Low Sodium', 'Low Sugar', 'Gluten Free', 'Dairy Free',
-  'High Protein', 'Low Carb', 'Heart Healthy', 'Diabetic Friendly',
-];
 
 export default function RecipeSuggestions() {
   const navigate = useNavigate();
@@ -30,8 +22,7 @@ export default function RecipeSuggestions() {
   const [checkedItems, setCheckedItems] = useState({});
   const [loading, setLoading] = useState(false);
   const [activeCategory, setActiveCategory] = useState('Chicken');
-  const [activeCuisine, setActiveCuisine] = useState('');
-  const [activeDiet, setActiveDiet] = useState('');
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [likedFoods, setLikedFoods] = useState('');
   const [dislikedFoods, setDislikedFoods] = useState('');

@@ -25,3 +25,64 @@ code {
   0% { background-position: -400px 0; }
   100% { background-position: 400px 0; }
 }
+/* High contrast mode global overrides */
+.high-contrast-content * {
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+}
+
+.high-contrast-content button {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 2px solid #ffffff !important;
+  font-size: inherit !important;
+}
+
+.high-contrast-content button:hover {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+.high-contrast-content input,
+.high-contrast-content select,
+.high-contrast-content textarea {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 2px solid #ffffff !important;
+}
+
+.high-contrast-content a {
+  color: #ffff00 !important;
+}
+
+/* Font size scaling */
+html[data-fontsize="large"] {
+  font-size: 18px;
+}
+
+html[data-fontsize="extraLarge"] {
+  font-size: 22px;
+}
+
+/* RTL support */
+[dir="rtl"] {
+  text-align: right;
+}
+
+/* Simple mode button focus for accessibility */
+button:focus {
+  outline: 3px solid #e8c49a !important;
+  outline-offset: 2px;
+}
+
+/* Screen reader only utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}

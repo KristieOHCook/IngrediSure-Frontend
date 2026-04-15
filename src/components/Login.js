@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import { useAccessibility } from '../AccessibilityContext';
 
 const IMAGES = [
   'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=90',
@@ -17,6 +18,7 @@ export default function Login() {
   const [bgIndex, setBgIndex] = useState(0);
   const [focusedField, setFocusedField] = useState('');
   const navigate = useNavigate();
+  const { t } = useAccessibility();
 
   useEffect(() => {
     const user = localStorage.getItem('user');
@@ -28,7 +30,6 @@ export default function Login() {
         localStorage.removeItem('user');
       }
     }
-
     const interval = setInterval(() => {
       setBgIndex(i => (i + 1) % IMAGES.length);
     }, 6000);
@@ -55,10 +56,23 @@ export default function Login() {
     setLoading(false);
   };
 
+  const inputStyle = (field) => ({
+    width: '100%', padding: '14px 16px',
+    background: 'rgba(255,255,255,0.08)',
+    border: focusedField === field
+      ? '1px solid rgba(232,196,154,0.6)'
+      : '1px solid rgba(255,255,255,0.15)',
+    borderRadius: '4px', color: '#ffffff',
+    fontFamily: 'Georgia, serif', fontSize: '14px',
+    outline: 'none', boxSizing: 'border-box',
+    transition: 'border-color 0.3s',
+    letterSpacing: '0.5px',
+  });
+
   return (
     <div style={{ minHeight: '100vh', fontFamily: 'Georgia, serif', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 
-      {/* Cycling background images */}
+      {/* Cycling background */}
       {IMAGES.map((img, i) => (
         <div key={i} style={{
           position: 'fixed', inset: 0, zIndex: 0,
@@ -128,7 +142,7 @@ export default function Login() {
           </div>
         </div>
 
-        {/* Error message */}
+        {/* Error */}
         {error && (
           <div style={{
             background: 'rgba(255,107,107,0.15)',
@@ -147,7 +161,7 @@ export default function Login() {
           {/* Username */}
           <div style={{ marginBottom: '16px' }}>
             <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', letterSpacing: '2px', marginBottom: '8px' }}>
-              USERNAME
+              {t.username.toUpperCase()}
             </div>
             <input
               type="text"
@@ -156,25 +170,14 @@ export default function Login() {
               onFocus={() => setFocusedField('username')}
               onBlur={() => setFocusedField('')}
               placeholder="Enter your username"
-              style={{
-                width: '100%', padding: '14px 16px',
-                background: 'rgba(255,255,255,0.08)',
-                border: focusedField === 'username'
-                  ? '1px solid rgba(232,196,154,0.6)'
-                  : '1px solid rgba(255,255,255,0.15)',
-                borderRadius: '4px', color: '#ffffff',
-                fontFamily: 'Georgia, serif', fontSize: '14px',
-                outline: 'none', boxSizing: 'border-box',
-                transition: 'border-color 0.3s',
-                letterSpacing: '0.5px',
-              }}
+              style={inputStyle('username')}
             />
           </div>
 
           {/* Password */}
           <div style={{ marginBottom: '12px' }}>
             <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', letterSpacing: '2px', marginBottom: '8px' }}>
-              PASSWORD
+              {t.password.toUpperCase()}
             </div>
             <input
               type="password"
@@ -183,18 +186,7 @@ export default function Login() {
               onFocus={() => setFocusedField('password')}
               onBlur={() => setFocusedField('')}
               placeholder="Enter your password"
-              style={{
-                width: '100%', padding: '14px 16px',
-                background: 'rgba(255,255,255,0.08)',
-                border: focusedField === 'password'
-                  ? '1px solid rgba(232,196,154,0.6)'
-                  : '1px solid rgba(255,255,255,0.15)',
-                borderRadius: '4px', color: '#ffffff',
-                fontFamily: 'Georgia, serif', fontSize: '14px',
-                outline: 'none', boxSizing: 'border-box',
-                transition: 'border-color 0.3s',
-                letterSpacing: '0.5px',
-              }}
+              style={inputStyle('password')}
             />
           </div>
 
@@ -203,9 +195,8 @@ export default function Login() {
             <Link to="/forgot-password" style={{
               color: 'rgba(232,196,154,0.8)', fontSize: '12px',
               textDecoration: 'none', letterSpacing: '1px',
-              fontFamily: 'Georgia, serif',
             }}>
-              Forgot Password?
+              {t.forgotPassword}
             </Link>
           </div>
 
@@ -235,7 +226,7 @@ export default function Login() {
               }
             }}
           >
-            {loading ? 'SIGNING IN...' : 'SIGN IN'}
+            {loading ? t.loading.toUpperCase() : t.signIn.toUpperCase()}
           </button>
 
           {/* Divider */}
@@ -244,14 +235,24 @@ export default function Login() {
           {/* Register link */}
           <div style={{ textAlign: 'center' }}>
             <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', letterSpacing: '0.5px' }}>
-              New to IngrediSure?{' '}
+              {t.noAccount}{' '}
             </span>
             <Link to="/register" style={{
               color: '#e8c49a', fontSize: '13px',
               textDecoration: 'none', letterSpacing: '1px',
               fontFamily: 'Georgia, serif',
             }}>
-              Create Account
+              {t.register}
+            </Link>
+          </div>
+
+          {/* Legal footer */}
+          <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.08)', textAlign: 'center' }}>
+            <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '10px', lineHeight: '1.7', margin: '0 0 8px', fontStyle: 'italic' }}>
+              IngrediSure is a wellness information tool only. Not medical advice. Not a medical device.
+            </p>
+            <Link to="/legal" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', textDecoration: 'underline', letterSpacing: '1px' }}>
+              Legal Disclaimers &amp; Terms of Use
             </Link>
           </div>
 

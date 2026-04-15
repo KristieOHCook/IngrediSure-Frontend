@@ -42,6 +42,7 @@ const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
 
 export default function MealPlanner() {
   const navigate = useNavigate();
+  const { t } = useAccessibility();
   const [user, setUser] = useState(null);
   const [plan, setPlan] = useState(null);
   const [verdicts, setVerdicts] = useState({});
