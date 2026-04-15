@@ -1,4 +1,5 @@
 import React from 'react';
+import InstallPrompt from './components/InstallPrompt';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
 import Register from './components/Register';
@@ -14,10 +15,14 @@ import SavedList from './components/SavedList';
 import RecipeSuggestions from './components/RecipeSuggestions';
 import GroceryListManager from './components/GroceryListManager';
 import MealPlanner from './components/MealPlanner';
+import MealPrepServices from './components/MealPrepServices';
+import NutritionTracker from './components/NutritionTracker';
+import FamilyHub from './components/FamilyHub';
 
 function App() {
   return (
     <Router>
+      <InstallPrompt />
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -33,6 +38,9 @@ function App() {
         <Route path="/recipes" element={<RecipeSuggestions />} />
         <Route path="/grocery-lists" element={<GroceryListManager />} />
         <Route path="/meal-planner" element={<MealPlanner />} />
+        <Route path="/meal-prep" element={<MealPrepServices />} />
+        <Route path="/nutrition" element={<NutritionTracker />} />
+        <Route path="/family" element={<FamilyHub />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>

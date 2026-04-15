@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import LoadingScreen from './LoadingScreen';
 
 const API = 'http://localhost:8080/api';
 const BG = 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=90';
@@ -165,7 +166,7 @@ export default function RestaurantFinder() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', fontFamily: 'Georgia, serif', position: 'relative', overflow: 'hidden' }}>
+    <div className="page-enter" style={{ minHeight: '100vh', fontFamily: 'Georgia, serif', position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: `url(${BG})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
       <div style={{ position: 'fixed', inset: 0, zIndex: 1, background: 'linear-gradient(135deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.45) 50%, rgba(0,0,0,0.65) 100%)' }} />
 
@@ -174,7 +175,7 @@ export default function RestaurantFinder() {
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '48px' }}>
           <div>
-            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', letterSpacing: '3px', marginBottom: '6px' }}>INGREDISURE</div>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.9)', letterSpacing: '3px', marginBottom: '6px' }}>INGREDISURE</div>
             <h1 style={{ margin: 0, fontSize: '36px', fontWeight: '400', color: '#ffffff', letterSpacing: '1px' }}>Restaurant Finder</h1>
           </div>
           <button
@@ -187,10 +188,10 @@ export default function RestaurantFinder() {
 
         {/* Search */}
         <div style={sectionStyle}>
-          <h2 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: '400', color: 'rgba(255,255,255,0.6)', letterSpacing: '3px' }}>
+          <h2 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: '400', color: 'rgba(255,255,255,0.9)', letterSpacing: '3px' }}>
             FIND RESTAURANTS
           </h2>
-          <p style={{ margin: '0 0 20px', fontSize: '13px', color: 'rgba(255,255,255,0.5)', fontStyle: 'italic' }}>
+          <p style={{ margin: '0 0 20px', fontSize: '13px', color: 'rgba(255,255,255,0.85)', fontStyle: 'italic' }}>
             Enter your ZIP code to discover safe dining options near you
           </p>
           <div style={{ display: 'flex', gap: '12px' }}>
@@ -214,7 +215,7 @@ export default function RestaurantFinder() {
         {/* Restaurant list */}
         {searched && !selected && (
           <div style={sectionStyle}>
-            <h2 style={{ margin: '0 0 20px', fontSize: '13px', fontWeight: '400', color: 'rgba(255,255,255,0.6)', letterSpacing: '3px' }}>
+            <h2 style={{ margin: '0 0 20px', fontSize: '13px', fontWeight: '400', color: 'rgba(255,255,255,0.9)', letterSpacing: '3px' }}>
               RESTAURANTS NEAR {zipCode}
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -229,13 +230,13 @@ export default function RestaurantFinder() {
                   <div>
                     <div style={{ color: '#ffffff', fontSize: '17px', marginBottom: '6px', fontWeight: '400' }}>{r.name}</div>
                     <div style={{ display: 'flex', gap: '16px' }}>
-                      <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontStyle: 'italic' }}>{r.cuisine}</span>
-                      <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>{r.address}</span>
+                      <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '12px', fontStyle: 'italic' }}>{r.cuisine}</span>
+                      <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '12px' }}>{r.address}</span>
                       <span style={{ color: '#e8c49a', fontSize: '12px' }}>{r.priceRange}</span>
                       <span style={{ color: '#7dd97f', fontSize: '12px' }}>★ {r.rating}</span>
                     </div>
                   </div>
-                  <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '18px' }}>›</div>
+                  <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '18px' }}>›</div>
                 </div>
               ))}
             </div>
@@ -249,25 +250,25 @@ export default function RestaurantFinder() {
               <div>
                 <h2 style={{ margin: '0 0 4px', fontSize: '24px', fontWeight: '400', color: '#ffffff' }}>{selected.name}</h2>
                 <div style={{ display: 'flex', gap: '16px', marginTop: '8px' }}>
-                  <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', fontStyle: 'italic' }}>{selected.cuisine}</span>
+                  <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '13px', fontStyle: 'italic' }}>{selected.cuisine}</span>
                   <span style={{ color: '#e8c49a', fontSize: '13px' }}>{selected.priceRange}</span>
                   <span style={{ color: '#7dd97f', fontSize: '13px' }}>★ {selected.rating}</span>
                 </div>
               </div>
               <button
                 onClick={() => { setSelected(null); setMenuVerdicts({}); }}
-                style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.6)', padding: '6px 16px', borderRadius: '2px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '11px', letterSpacing: '1px' }}
+                style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.9)', padding: '6px 16px', borderRadius: '2px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '11px', letterSpacing: '1px' }}
               >
                 ← BACK
               </button>
             </div>
 
-            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', letterSpacing: '3px', marginBottom: '16px' }}>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.85)', letterSpacing: '3px', marginBottom: '16px' }}>
               MENU — SAFETY ANALYSIS
             </div>
 
             {loadingVerdicts && (
-              <div style={{ textAlign: 'center', padding: '24px', color: 'rgba(255,255,255,0.6)', letterSpacing: '2px', fontSize: '13px' }}>
+              <div style={{ textAlign: 'center', padding: '24px', color: 'rgba(255,255,255,0.9)', letterSpacing: '2px', fontSize: '13px' }}>
                 ANALYZING MENU ITEMS...
               </div>
             )}
@@ -280,7 +281,7 @@ export default function RestaurantFinder() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: v?.flaggedIngredients?.length > 0 ? '12px' : '0' }}>
                       <div>
                         <div style={{ color: '#ffffff', fontSize: '16px', marginBottom: '4px' }}>{item.name}</div>
-                        <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', fontStyle: 'italic' }}>{item.ingredients}</div>
+                        <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '12px', fontStyle: 'italic' }}>{item.ingredients}</div>
                       </div>
                       {v && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, marginLeft: '16px' }}>
@@ -313,7 +314,7 @@ export default function RestaurantFinder() {
                 <span style={{ color: '#7dd97f', fontSize: '12px', letterSpacing: '1px' }}>✓ SAFE</span>
                 <span style={{ color: '#f0c040', fontSize: '12px', letterSpacing: '1px' }}>⚠ CAUTION</span>
                 <span style={{ color: '#ff6b6b', fontSize: '12px', letterSpacing: '1px' }}>✗ UNSAFE</span>
-                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', fontStyle: 'italic', marginLeft: 'auto' }}>Based on your health profile</span>
+                <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '12px', fontStyle: 'italic', marginLeft: 'auto' }}>Based on your health profile</span>
               </div>
             )}
           </div>

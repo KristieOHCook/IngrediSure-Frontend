@@ -14,6 +14,9 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [emailOptIn, setEmailOptIn] = useState(true);
+  const [smsOptIn, setSmsOptIn] = useState(false);
+  const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [bgIndex, setBgIndex] = useState(0);
@@ -47,7 +50,7 @@ export default function Register() {
     setLoading(true);
     try {
       await axios.post('http://localhost:8080/api/auth/register', {
-        username, email, password
+        username, email, password, emailOptIn, smsOptIn, phone
       });
       navigate('/');
     } catch (err) {
@@ -207,8 +210,24 @@ export default function Register() {
             />
           </div>
 
+          {/* Phone number */}
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', letterSpacing: '2px', marginBottom: '8px' }}>
+              MOBILE PHONE <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '9px' }}>(OPTIONAL — FOR SMS ALERTS)</span>
+            </div>
+            <input
+              type="tel"
+              value={phone}
+              onChange={e => setPhone(e.target.value)}
+              onFocus={() => setFocusedField('phone')}
+              onBlur={() => setFocusedField('')}
+              placeholder="e.g. (614) 555-0123"
+              style={inputStyle('phone')}
+            />
+          </div>
+
           {/* Confirm Password */}
-          <div style={{ marginBottom: '28px' }}>
+          <div style={{ marginBottom: '20px' }}>
             <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', letterSpacing: '2px', marginBottom: '8px' }}>
               CONFIRM PASSWORD
             </div>
@@ -221,6 +240,29 @@ export default function Register() {
               placeholder="Re-enter your password"
               style={inputStyle('confirm')}
             />
+          </div>
+
+          {/* Opt-in checkboxes */}
+          <div style={{ marginBottom: '24px', padding: '16px 20px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px' }}>
+            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', letterSpacing: '2px', marginBottom: '12px' }}>COMMUNICATION PREFERENCES</div>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px', cursor: 'pointer' }} onClick={() => setEmailOptIn(!emailOptIn)}>
+              <div style={{ width: '18px', height: '18px', border: `1.5px solid ${emailOptIn ? '#7dd97f' : 'rgba(255,255,255,0.3)'}`, borderRadius: '2px', background: emailOptIn ? 'rgba(93,187,99,0.3)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px', transition: 'all 0.2s' }}>
+                {emailOptIn && <span style={{ color: '#7dd97f', fontSize: '11px' }}>✓</span>}
+              </div>
+              <div>
+                <div style={{ color: '#ffffff', fontSize: '13px', marginBottom: '2px' }}>Weekly meal plans & safety tips by email</div>
+                <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', fontStyle: 'italic' }}>Personalized to your health conditions — unsubscribe anytime</div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer' }} onClick={() => setSmsOptIn(!smsOptIn)}>
+              <div style={{ width: '18px', height: '18px', border: `1.5px solid ${smsOptIn ? '#74b9ff' : 'rgba(255,255,255,0.3)'}`, borderRadius: '2px', background: smsOptIn ? 'rgba(116,185,255,0.3)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px', transition: 'all 0.2s' }}>
+                {smsOptIn && <span style={{ color: '#74b9ff', fontSize: '11px' }}>✓</span>}
+              </div>
+              <div>
+                <div style={{ color: '#ffffff', fontSize: '13px', marginBottom: '2px' }}>Safety alerts & reminders by text message</div>
+                <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', fontStyle: 'italic' }}>Requires mobile number above — standard rates apply</div>
+              </div>
+            </div>
           </div>
 
           {/* Register button */}

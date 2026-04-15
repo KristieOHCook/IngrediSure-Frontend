@@ -1,25 +1,48 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "IngrediSure",
+  "name": "IngrediSure — Eat Well. Choose Wisely.",
+  "description": "The first all-in-one health intelligence hub for ingredient safety, meal planning and nutrition tracking.",
   "icons": [
     {
-      "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "src": "logo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
     },
     {
-      "src": "logo192.png",
-      "type": "image/png",
-      "sizes": "192x192"
-    },
-    {
-      "src": "logo512.png",
-      "type": "image/png",
-      "sizes": "512x512"
+      "src": "logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
     }
   ],
-  "start_url": ".",
+  "start_url": "/",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#1a1a1a",
+  "background_color": "#1a1a1a",
+  "orientation": "portrait",
+  "categories": ["health", "food", "medical"],
+  "shortcuts": [
+    {
+      "name": "Grocery Scanner",
+      "short_name": "Scanner",
+      "description": "Scan grocery products for safety",
+      "url": "/grocery",
+      "icons": [{ "src": "logo.jpg", "sizes": "96x96" }]
+    },
+    {
+      "name": "Meal Planner",
+      "short_name": "Planner",
+      "description": "View your weekly meal plan",
+      "url": "/meal-planner",
+      "icons": [{ "src": "logo.jpg", "sizes": "96x96" }]
+    },
+    {
+      "name": "Barcode Scanner",
+      "short_name": "Barcode",
+      "description": "Scan product barcodes",
+      "url": "/barcode",
+      "icons": [{ "src": "logo.jpg", "sizes": "96x96" }]
+    }
+  ]
 }

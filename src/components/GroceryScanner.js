@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import LoadingScreen from './LoadingScreen';
 
 const API = 'http://localhost:8080/api';
 const BG = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200&q=90';
@@ -154,7 +155,7 @@ export default function GroceryScanner() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', fontFamily: 'Georgia, serif', position: 'relative', overflow: 'hidden' }}>
+    <div className="page-enter" style={{ minHeight: '100vh', fontFamily: 'Georgia, serif', position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: `url(${BG})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
       <div style={{ position: 'fixed', inset: 0, zIndex: 1, background: 'linear-gradient(135deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.45) 50%, rgba(0,0,0,0.65) 100%)' }} />
 
@@ -309,7 +310,30 @@ export default function GroceryScanner() {
                 )}
 
                 {/* Substitution suggestion */}
-                {verdict.substitutionSuggestion && (
+                {/* Social share buttons */}
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', letterSpacing: '2px', width: '100%', marginBottom: '4px' }}>SHARE THIS RESULT</div>
+                {[
+                  { label: '📘 Facebook', color: '#1877f2', url: `https://www.facebook.com/sharer/sharer.php?u=https://ingredisure.com&quote=I just checked ${selected?.product_name || 'a product'} on IngrediSure — ${verdict.safetyVerdict} for my health profile! Check your ingredients at ingredisure.com` },
+                  { label: '🐦 Twitter', color: '#1da1f2', url: `https://twitter.com/intent/tweet?text=Just checked ${selected?.product_name || 'a product'} on IngrediSure — ${verdict.safetyVerdict}! Know exactly what's safe for YOUR health conditions. Try it free at ingredisure.com %23IngrediSure %23HealthyEating` },
+                  { label: '📸 Instagram', color: '#e1306c', action: 'copy' },
+                ].map(btn => (
+                  <span key={btn.label}
+                    onClick={() => {
+                      if (btn.action === 'copy') {
+                        navigator.clipboard.writeText(`I just checked ${selected?.product_name || 'a product'} on IngrediSure — ${verdict.safetyVerdict} for my health profile! Know exactly what's safe for your health conditions. Try it free at ingredisure.com #IngrediSure #HealthyEating`);
+                        alert('Caption copied! Paste it into your Instagram post.');
+                      } else {
+                        window.open(btn.url, '_blank');
+                      }
+                    }}
+                    style={{ padding: '5px 12px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '2px', color: 'rgba(255,255,255,0.8)', cursor: 'pointer', fontSize: '11px', letterSpacing: '0.5px' }}>
+                    {btn.label}
+                  </span>
+                ))}
+              </div>
+
+              {verdict.substitutionSuggestion && (
                   <div style={{ marginBottom: '20px', paddingBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                     <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', letterSpacing: '2px', marginBottom: '8px' }}>
                       SUGGESTION
