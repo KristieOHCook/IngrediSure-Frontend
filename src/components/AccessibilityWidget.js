@@ -31,6 +31,7 @@ export default function AccessibilityWidget() {
     fontSize, setFontSize,
     highContrast, setHighContrast,
     isReading, speak, stopSpeaking,
+    selectedVoice, setSelectedVoice, availableVoices,
     t,
   } = useAccessibility();
 
@@ -87,12 +88,65 @@ export default function AccessibilityWidget() {
 
   const readPage = () => {
     if (isReading) { stopSpeaking(); return; }
-    const content = Array.from(document.querySelectorAll('h1, h2, h3, p, button'))
-      .map(el => el.innerText)
-      .filter(Boolean)
+
+    // Grab all readable text elements in order
+    const elements = Array.from(document.querySelectorAll(
+      'h1, h2, h3, h4, p, li, td, th, label, button, [aria-label], .readable'
+    ));
+
+    const content = elements
+      .map(el => el.innerText?.trim())
+      .filter(text => text && text.length > 1 && !text.match(/^[←→✓✗⚠×+\-•]+$/))
       .join('. ')
-      .substring(0, 1200);
-    speak(content || 'No readable content found on this page.');
+      .replace(/\.+/g, '.')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (!content) {
+      speak('No readable content found on this page.');
+      return;
+    }
+
+    // Split into chunks of 200 words to avoid speech synthesis cutoff
+    const words = content.split(' ');
+    const chunks = [];
+    for (let i = 0; i < words.length; i += 200) {
+      chunks.push(words.slice(i, i + 200).join(' '));
+    }
+
+    // Speak chunks sequentially
+    let chunkIndex = 0;
+    const speakNextChunk = () => {
+      if (chunkIndex >= chunks.length) {
+        return;
+      }
+      const utterance = new SpeechSynthesisUtterance(chunks[chunkIndex]);
+      const langMap = {
+        en: 'en-US', es: 'es-ES', zh: 'zh-CN',
+        ja: 'ja-JP', fr: 'fr-FR', ar: 'ar-SA', hi: 'hi-IN',
+      };
+      utterance.lang = langMap[language] || 'en-US';
+      utterance.rate = 0.9;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+
+      if (selectedVoice) {
+        const voices = window.speechSynthesis.getVoices();
+        const voice = voices.find(v => v.name === selectedVoice);
+        if (voice) utterance.voice = voice;
+      }
+
+      utterance.onend = () => {
+        chunkIndex++;
+        speakNextChunk();
+      };
+      utterance.onerror = () => stopSpeaking();
+
+      window.speechSynthesis.speak(utterance);
+    };
+
+    window.speechSynthesis.cancel();
+    speakNextChunk();
   };
 
   const resetAll = () => {

@@ -30,16 +30,31 @@ export function AccessibilityProvider({ children }) {
 
   useEffect(() => {
     localStorage.setItem('simpleMode', simpleMode);
+    if (simpleMode) {
+      document.body.classList.add('simple-mode');
+    } else {
+      document.body.classList.remove('simple-mode');
+    }
   }, [simpleMode]);
 
   useEffect(() => {
     localStorage.setItem('fontSize', fontSize);
-    const sizes = { normal: '16px', large: '20px', extraLarge: '24px' };
-    document.documentElement.style.fontSize = sizes[fontSize] || '16px';
+    // Remove all font size classes first
+    document.body.classList.remove('font-large', 'font-xlarge');
+    if (fontSize === 'large') {
+      document.body.classList.add('font-large');
+    } else if (fontSize === 'extraLarge') {
+      document.body.classList.add('font-xlarge');
+    }
   }, [fontSize]);
 
   useEffect(() => {
     localStorage.setItem('highContrast', highContrast);
+    if (highContrast) {
+      document.body.classList.add('high-contrast');
+    } else {
+      document.body.classList.remove('high-contrast');
+    }
   }, [highContrast]);
 
   const speak = (text) => {

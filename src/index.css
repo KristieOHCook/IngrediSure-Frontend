@@ -86,3 +86,89 @@ button:focus {
   clip: rect(0, 0, 0, 0);
   border: 0;
 }
+/* ── SIMPLE MODE ────────────────────────────────────────── */
+body.simple-mode {
+  background: #1a1a1a !important;
+  font-size: 20px !important;
+}
+
+body.simple-mode h1 {
+  font-size: 36px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+}
+
+body.simple-mode h2 {
+  font-size: 28px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+}
+
+body.simple-mode h3, body.simple-mode h4 {
+  font-size: 22px !important;
+  color: #ffffff !important;
+}
+
+body.simple-mode p, body.simple-mode li, body.simple-mode span {
+  font-size: 18px !important;
+  line-height: 1.9 !important;
+  color: rgba(255,255,255,0.9) !important;
+}
+
+body.simple-mode button {
+  font-size: 18px !important;
+  padding: 16px 24px !important;
+  min-height: 56px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  letter-spacing: 1px !important;
+}
+
+body.simple-mode input,
+body.simple-mode select,
+body.simple-mode textarea {
+  font-size: 18px !important;
+  padding: 14px 16px !important;
+  min-height: 52px !important;
+}
+
+body.simple-mode nav,
+body.simple-mode .sidebar {
+  font-size: 18px !important;
+}
+
+/* ── FONT SIZE MODES ────────────────────────────────────── */
+body.font-large {
+  font-size: 18px !important;
+}
+
+body.font-large p, body.font-large span, body.font-large div,
+body.font-large button, body.font-large input, body.font-large label {
+  font-size: 18px !important;
+}
+
+body.font-large h1 { font-size: 42px !important; }
+body.font-large h2 { font-size: 34px !important; }
+body.font-large h3 { font-size: 26px !important; }
+
+body.font-xlarge {
+  font-size: 22px !important;
+}
+
+body.font-xlarge p, body.font-xlarge span, body.font-xlarge div,
+body.font-xlarge button, body.font-xlarge input, body.font-xlarge label {
+  font-size: 22px !important;
+}
+
+body.font-xlarge h1 { font-size: 50px !important; }
+body.font-xlarge h2 { font-size: 40px !important; }
+body.font-xlarge h3 { font-size: 30px !important; }
+
+/* ── HIGH CONTRAST MODE ─────────────────────────────────── */
+body.high-contrast {
+  filter: contrast(1.5) !important;
+}
+
+body.high-contrast * {
+  border-color: rgba(255,255,255,0.6) !important;
+}

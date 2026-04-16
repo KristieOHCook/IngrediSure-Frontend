@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useAccessibility } from '../AccessibilityContext';
 import LoadingScreen from './LoadingScreen';
 
 const API = 'http://localhost:8080/api';
