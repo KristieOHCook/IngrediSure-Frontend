@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useAccessibility } from '../AccessibilityContext';
 import LoadingScreen from './LoadingScreen';
 
-const API = 'http://localhost:8080/api';
+const API = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 const BG = 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1200&q=90';
 
 const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
@@ -182,10 +183,10 @@ export default function NutritionTracker() {
   const navigate = useNavigate();
   const { t } = useAccessibility();
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('calories');
   const [todayLogs, setTodayLogs] = useState([]);
   const [medications, setMedications] = useState([]);
-  const [activeTab, setActiveTab] = useState('tracker');
-  const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [showAddMeal, setShowAddMeal] = useState(false);
   const [showAddMed, setShowAddMed] = useState(false);

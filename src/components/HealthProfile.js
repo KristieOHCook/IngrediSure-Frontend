@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useAccessibility } from '../AccessibilityContext';
 import LoadingScreen from './LoadingScreen';
 
-const API = 'http://localhost:8080/api';
+const API = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 
 const CONDITIONS = [
   'Diabetes', 'Hypertension', 'Celiac Disease',
