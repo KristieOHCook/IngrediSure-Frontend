@@ -215,6 +215,12 @@ export default function RestaurantFinder() {
           >
             ← DASHBOARD
           </button>
+          <button
+            onClick={() => navigate('/my-profile')}
+            style={{ background: 'transparent', color: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,255,255,0.4)', padding: '10px 24px', borderRadius: '2px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px' }}
+          >
+            MY PROFILE
+          </button>
         </div>
 
         {/* Search */}

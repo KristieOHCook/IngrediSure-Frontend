@@ -93,7 +93,23 @@ export default function MealPrepServices() {
   const [selected, setSelected] = useState(null);
   const [menuVerdicts, setMenuVerdicts] = useState({});
   const [loadingVerdicts, setLoadingVerdicts] = useState(false);
-  const [filterDiet, setFilterDiet] = useState('');
+  const [filterDiets, setFilterDiets] = useState([]);
+
+  const toggleDiet = (diet) => {
+    setFilterDiets(prev =>
+      prev.includes(diet)
+        ? prev.filter(d => d !== diet)
+        : [...prev, diet]
+    );
+    setSelected(null);
+    setMenuVerdicts({});
+  };
+
+  const clearFilters = () => {
+    setFilterDiets([]);
+    setSelected(null);
+    setMenuVerdicts({});
+  };
   const [zipCode, setZipCode] = useState('');
   const [searched, setSearched] = useState(false);
 
@@ -139,7 +155,7 @@ export default function MealPrepServices() {
   };
 
   const filteredServices = SERVICES.filter(s =>
-    !filterDiet || s.dietaryOptions.includes(filterDiet)
+    filterDiets.length === 0 || filterDiets.every(d => s.dietaryOptions.includes(d))
   );
 
   const verdictColor = (v) => {
@@ -190,8 +206,14 @@ export default function MealPrepServices() {
               Health-focused delivery services catering to your dietary restrictions
             </p>
           </div>
-          <button onClick={() => navigate('/dashboard')} style={{ background: 'transparent', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.3)', padding: '10px 24px', borderRadius: '2px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px' }}>
+          <button onClick={() => navigate('/dashboard')} style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.5)', padding: '10px 24px', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px', fontWeight: '600' }}>
             ← DASHBOARD
+          </button>
+          <button
+            onClick={() => navigate('/my-profile')}
+            style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.5)', padding: '10px 24px', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px', fontWeight: '600' }}
+          >
+            MY PROFILE
           </button>
         </div>
 
@@ -215,20 +237,67 @@ export default function MealPrepServices() {
             </button>
           </div>
           <div>
-            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', letterSpacing: '2px', marginBottom: '10px' }}>FILTER BY DIETARY NEED</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              <button onClick={() => setFilterDiet('')} style={{ padding: '6px 14px', background: !filterDiet ? 'rgba(232,196,154,0.2)' : 'rgba(255,255,255,0.04)', border: !filterDiet ? '1px solid rgba(232,196,154,0.5)' : '1px solid rgba(255,255,255,0.1)', borderRadius: '2px', color: !filterDiet ? '#e8c49a' : 'rgba(255,255,255,0.4)', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '11px', letterSpacing: '1px' }}>ALL</button>
-              {ALL_DIETS.map(diet => (
-                <button key={diet} onClick={() => setFilterDiet(diet)} style={{ padding: '6px 14px', background: filterDiet === diet ? 'rgba(232,196,154,0.2)' : 'rgba(255,255,255,0.04)', border: filterDiet === diet ? '1px solid rgba(232,196,154,0.5)' : '1px solid rgba(255,255,255,0.1)', borderRadius: '2px', color: filterDiet === diet ? '#e8c49a' : 'rgba(255,255,255,0.4)', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '11px', letterSpacing: '1px' }}>
-                  {diet}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+              <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', letterSpacing: '2px' }}>
+                FILTER BY DIETARY NEED
+                <span style={{ color: 'rgba(255,255,255,0.25)', marginLeft: '8px', fontStyle: 'italic' }}>
+                  (select multiple)
+                </span>
+              </div>
+              {filterDiets.length > 0 && (
+                <button onClick={clearFilters} style={{ background: 'rgba(255,107,107,0.15)', border: '1px solid rgba(255,107,107,0.3)', color: '#ff6b6b', padding: '4px 12px', borderRadius: '2px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '10px', letterSpacing: '1px' }}>
+                  CLEAR ALL ×
                 </button>
-              ))}
+              )}
+            </div>
+
+            {filterDiets.length > 0 && (
+              <div style={{ marginBottom: '10px', padding: '8px 12px', background: 'rgba(232,196,154,0.08)', border: '1px solid rgba(232,196,154,0.2)', borderRadius: '4px' }}>
+                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', letterSpacing: '1px', marginRight: '8px' }}>ACTIVE FILTERS:</span>
+                {filterDiets.map(d => (
+                  <span key={d} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', margin: '2px 4px', padding: '3px 10px', background: 'rgba(232,196,154,0.2)', border: '1px solid rgba(232,196,154,0.4)', borderRadius: '12px', color: '#e8c49a', fontSize: '11px' }}>
+                    {d}
+                    <span onClick={() => toggleDiet(d)} style={{ cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>×</span>
+                  </span>
+                ))}
+                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginLeft: '8px', fontStyle: 'italic' }}>
+                  — {filteredServices.length} service{filteredServices.length !== 1 ? 's' : ''} match
+                </span>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {ALL_DIETS.map(diet => {
+                const isSelected = filterDiets.includes(diet);
+                return (
+                  <button
+                    key={diet}
+                    onClick={() => toggleDiet(diet)}
+                    style={{
+                      padding: '6px 14px',
+                      background: isSelected ? 'rgba(232,196,154,0.2)' : 'rgba(255,255,255,0.04)',
+                      border: isSelected ? '1px solid rgba(232,196,154,0.5)' : '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '2px',
+                      color: isSelected ? '#e8c49a' : 'rgba(255,255,255,0.4)',
+                      cursor: 'pointer',
+                      fontFamily: 'Georgia, serif',
+                      fontSize: '11px',
+                      letterSpacing: '1px',
+                      transition: 'all 0.2s',
+                      position: 'relative',
+                    }}
+                  >
+                    {isSelected && <span style={{ marginRight: '5px' }}>✓</span>}
+                    {diet}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
 
         {/* Featured services grid */}
-        {!selected && !searched && !filterDiet && (
+        {!selected && !searched && filterDiets.length === 0 && (
           <div style={sectionStyle}>
             <h2 style={{ margin: '0 0 20px', fontSize: '13px', fontWeight: '400', color: 'rgba(255,255,255,0.6)', letterSpacing: '3px' }}>
               FEATURED SERVICES — {SERVICES.length} AVAILABLE
@@ -256,10 +325,10 @@ export default function MealPrepServices() {
         )}
 
         {/* Filtered/searched services list */}
-        {!selected && (searched || filterDiet) && (
+        {!selected && (searched || filterDiets.length > 0) && (
           <div style={sectionStyle}>
             <h2 style={{ margin: '0 0 20px', fontSize: '13px', fontWeight: '400', color: 'rgba(255,255,255,0.6)', letterSpacing: '3px' }}>
-              {searched ? `SERVICES DELIVERING TO ${zipCode}` : 'FILTERED SERVICES'} — {filteredServices.length} FOUND
+              {searched ? `SERVICES DELIVERING TO ${zipCode}` : `FILTERED BY: ${filterDiets.join(', ')}`} — {filteredServices.length} FOUND
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {filteredServices.map(service => (

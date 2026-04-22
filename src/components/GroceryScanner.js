@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Toast from './Toast';
 import LoadingScreen from './LoadingScreen';
 import ReadAloudButton from './ReadAloudButton';
 import { useAccessibility } from '../AccessibilityContext';
@@ -54,6 +55,11 @@ export default function GroceryScanner() {
   const navigate = useNavigate();
   const { t, simpleMode, highContrast, fontSize } = useAccessibility();
   const [user, setUser] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -172,9 +178,15 @@ export default function GroceryScanner() {
           </div>
           <button
             onClick={() => navigate('/dashboard')}
-            style={{ background: 'transparent', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.3)', padding: '10px 24px', borderRadius: '2px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px' }}
+            style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.5)', padding: '10px 24px', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px', fontWeight: '600' }}
           >
             ← DASHBOARD
+          </button>
+          <button
+            onClick={() => navigate('/my-profile')}
+            style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.5)', padding: '10px 24px', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px', fontWeight: '600' }}
+          >
+            MY PROFILE
           </button>
         </div>
 
@@ -287,7 +299,7 @@ export default function GroceryScanner() {
                     {verdictIcon(verdict.safetyVerdict)}
                   </div>
                   <div>
-                    <div style={{ fontSize: '20px', fontWeight: '700', color: verdictColor(verdict.safetyVerdict), letterSpacing: '2px' }}>
+                    <div style={{ fontSize: '22px', fontWeight: '900', color: verdictColor(verdict.safetyVerdict), letterSpacing: '2px', textShadow: '0 0 20px currentColor' }}>
                       {verdict.safetyVerdict?.toUpperCase()}
                     </div>
                     <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '3px', fontStyle: 'italic' }}>
@@ -386,14 +398,15 @@ export default function GroceryScanner() {
       {/* Legal footer */}
         <div style={{ textAlign: 'center', padding: '20px 0 40px', borderTop: '1px solid rgba(255,255,255,0.06)', marginTop: '20px' }}>
           <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', fontStyle: 'italic', margin: '0 0 6px', lineHeight: '1.7' }}>
-            {t.safetyDisclaimer}
+            <span style={{ color: '#ffffff', fontWeight: '600' }}>{t.safetyDisclaimer}</span>
           </p>
           <span onClick={() => navigate('/legal')}
-            style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', letterSpacing: '1px', cursor: 'pointer', textDecoration: 'underline' }}>
+            style={{ color: '#ffffff', fontSize: '11px', letterSpacing: '1px', cursor: 'pointer', textDecoration: 'underline', fontWeight: '600', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
             {t.notMedicalAdvice} View Legal Disclaimers
           </span>
         </div>
       </div>
+    {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }

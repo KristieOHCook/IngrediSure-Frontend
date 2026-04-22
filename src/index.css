@@ -172,3 +172,13 @@ body.high-contrast {
 body.high-contrast * {
   border-color: rgba(255,255,255,0.6) !important;
 }
+select option {
+  background-color: #2a2a2a;
+  color: #ffffff;
+  padding: 8px;
+}
+
+select:focus {
+  outline: none;
+  border-color: rgba(232,196,154,0.6);
+}

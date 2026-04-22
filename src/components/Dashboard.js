@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { useAccessibility } from '../AccessibilityContext';
 import SMSReminder from './SMSReminder';
 import SimpleModeWrapper from './SimpleModeWrapper';
+
+const API = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 
 const IMAGES = [
   'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=90',
@@ -23,18 +26,18 @@ const IMAGES = [
 
 const NAV_SECTIONS = [
   {
-    id: 'begin',
-    label: 'Begin Your Journey',
-    mobileLabel: 'Start',
-    tiles: [
-      {
-        id: 'health', title: 'Set Up Your Health Profile',
-        desc: 'Start here — add your medical conditions and ingredients to avoid for personalized safety checks',
-        route: '/profile', accent: 'rgba(93,187,99,0.9)',
-        iconPath: <><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></>,
-      },
-    ],
-    intro: true,
+    id: 'howtostart',
+    label: 'How To Get Started',
+    mobileLabel: 'Guide',
+    tiles: [],
+    howto: true,
+  },
+  {
+    id: 'ourstory',
+    label: 'Our Story',
+    mobileLabel: 'Story',
+    tiles: [],
+    story: true,
   },
   {
     id: 'discover',
@@ -129,6 +132,12 @@ const NAV_SECTIONS = [
     mobileLabel: 'Account',
     tiles: [
       {
+        id: 'my-profile', title: 'My Profile',
+        desc: 'View your health stats, conditions, avoidances and account overview at a glance',
+        route: '/my-profile', accent: 'rgba(162,155,254,0.9)',
+        iconPath: <><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></>,
+      },
+      {
         id: 'feedback', title: '💚 Share Your Experience',
         desc: 'Your feedback directly shapes IngrediSure — 3 minutes of your time helps us serve thousands better',
         route: '/feedback', accent: 'rgba(93,187,99,0.9)',
@@ -144,6 +153,66 @@ const NAV_SECTIONS = [
     ],
   },
 ];
+
+const QUICK_LINKS = [
+  {
+    label: 'Grocery Scanner', route: '/grocery',
+    icon: <><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></>,
+  },
+  {
+    label: 'Barcode Scanner', route: '/barcode',
+    icon: <><path d="M6 2H4a2 2 0 00-2 2v2M18 2h2a2 2 0 012 2v2M6 22H4a2 2 0 01-2-2v-2M18 22h2a2 2 0 002-2v-2"/><line x1="7" y1="7" x2="7" y2="17"/><line x1="10" y1="7" x2="10" y2="17"/><line x1="13" y1="7" x2="13" y2="17"/><line x1="16" y1="7" x2="16" y2="17"/></>,
+  },
+  {
+    label: 'Restaurant Finder', route: '/restaurant',
+    icon: <><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></>,
+  },
+  {
+    label: 'My Profile', route: '/my-profile',
+    icon: <><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></>,
+  },
+  {
+    label: 'Family Hub', route: '/family',
+    icon: <><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></>,
+  },
+  {
+    label: 'Meal Planner', route: '/meal-planner',
+    icon: <><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>,
+  },
+];
+
+function QuickButton({ label, icon, onClick }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: '7px',
+        padding: '8px 16px',
+        background: hovered ? 'rgba(232,196,154,0.18)' : 'rgba(255,255,255,0.07)',
+        backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+        border: hovered ? '1px solid rgba(232,196,154,0.65)' : '1px solid rgba(232,196,154,0.22)',
+        borderRadius: '20px',
+        color: hovered ? '#e8c49a' : 'rgba(255,255,255,0.75)',
+        cursor: 'pointer',
+        fontFamily: 'Georgia, serif', fontSize: '11px', letterSpacing: '1px',
+        transition: 'all 0.22s ease',
+        whiteSpace: 'nowrap',
+        boxShadow: hovered ? '0 4px 18px rgba(232,196,154,0.12)' : 'none',
+      }}
+    >
+      <svg viewBox="0 0 24 24" width="13" height="13" fill="none"
+        stroke={hovered ? '#e8c49a' : 'rgba(255,255,255,0.65)'}
+        strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+      >
+        {icon}
+      </svg>
+      {label}
+    </button>
+  );
+}
 
 function ContentTile({ tile, onClick, isMobile }) {
   const [hovered, setHovered] = useState(false);
@@ -203,6 +272,22 @@ export default function Dashboard() {
   const [animating, setAnimating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [quickStats, setQuickStats] = useState({ conditions: null, avoidances: null, savedScans: null });
+
+  const fetchQuickStats = async (u) => {
+    const authHeaders = { Authorization: `Bearer ${u.token}` };
+    const [condRes, avoRes] = await Promise.all([
+      axios.get(`${API}/conditions`, { headers: authHeaders }).catch(() => ({ data: [] })),
+      axios.get(`${API}/avoidances`, { headers: authHeaders }).catch(() => ({ data: [] })),
+    ]);
+    let savedCount = 0;
+    try { savedCount = JSON.parse(localStorage.getItem('savedScans') || '[]').length; } catch {}
+    setQuickStats({
+      conditions: (condRes.data || []).length,
+      avoidances: (avoRes.data || []).length,
+      savedScans: savedCount,
+    });
+  };
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
@@ -210,6 +295,7 @@ export default function Dashboard() {
     const parsed = JSON.parse(stored);
     if (!parsed?.token) { navigate('/'); return; }
     setUser(parsed);
+    fetchQuickStats(parsed);
     setLoading(false);
 
     const interval = setInterval(() => {
@@ -249,7 +335,7 @@ export default function Dashboard() {
   const visibleSections = NAV_SECTIONS.map(s => ({
     ...s,
     tiles: s.tiles.filter(t => !t.adminOnly || user?.role === 'ROLE_ADMIN'),
-  })).filter(s => s.tiles.length > 0);
+  })).filter(s => s.tiles.length > 0 || s.howto || s.story);
 
   const currentSection = visibleSections.find(s => s.id === activeSection);
 
@@ -284,8 +370,15 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Mobile quick access bar */}
+        <div style={{ position: 'fixed', top: '64px', left: 0, right: 0, zIndex: 9, display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto', padding: '10px 16px', background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.07)', scrollbarWidth: 'none' }}>
+          {QUICK_LINKS.map(link => (
+            <QuickButton key={link.route} label={link.label} icon={link.icon} onClick={() => navigate(link.route)} />
+          ))}
+        </div>
+
         {/* Mobile content */}
-        <div style={{ position: 'relative', zIndex: 2, paddingTop: '72px', paddingBottom: '80px', minHeight: '100vh' }}>
+        <div style={{ position: 'relative', zIndex: 2, paddingTop: '120px', paddingBottom: '80px', minHeight: '100vh' }}>
 
           {/* No section — mobile welcome */}
           {!activeSection && (
@@ -303,6 +396,25 @@ export default function Dashboard() {
               <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '14px', fontStyle: 'italic', fontFamily: 'Georgia, serif', lineHeight: '1.8', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
                 Select a category below to get started.
               </p>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '28px', flexWrap: 'wrap' }}>
+                {[
+                  { label: 'Conditions', value: quickStats.conditions, icon: '♥', color: 'rgba(93,187,99,0.85)' },
+                  { label: 'Avoidances', value: quickStats.avoidances, icon: '⚠', color: 'rgba(255,107,53,0.85)' },
+                  { label: 'Saved Scans', value: quickStats.savedScans, icon: '★', color: 'rgba(116,185,255,0.85)' },
+                ].map(stat => (
+                  <div key={stat.label} onClick={() => navigate('/my-profile')}
+                    style={{ cursor: 'pointer', background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: `1px solid ${stat.color}`, borderRadius: '4px', padding: '12px 18px', minWidth: '90px' }}
+                  >
+                    <div style={{ fontSize: '16px', marginBottom: '4px', color: stat.color }}>{stat.icon}</div>
+                    <div style={{ fontSize: '22px', fontWeight: '300', color: '#ffffff', fontFamily: 'Georgia, serif', lineHeight: 1 }}>
+                      {stat.value !== null ? stat.value : '—'}
+                    </div>
+                    <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', marginTop: '3px', fontFamily: 'Georgia, serif' }}>
+                      {stat.label.toUpperCase()}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
@@ -412,7 +524,7 @@ export default function Dashboard() {
                     <span style={{ fontSize: '14px', color: isActive ? '#e8c49a' : 'rgba(255,255,255,0.3)' }}>{isActive ? '‹' : '›'}</span>
                   </div>
                   <div style={{ fontSize: '10px', color: isActive ? 'rgba(232,196,154,0.6)' : 'rgba(255,255,255,0.3)', marginTop: '2px', fontStyle: 'italic' }}>
-                    {section.tiles.length} feature{section.tiles.length > 1 ? 's' : ''}
+                    {section.story ? 'About IngrediSure' : section.howto ? 'Step-by-step guide' : `${section.tiles.length} feature${section.tiles.length > 1 ? 's' : ''}`}
                   </div>
                 </div>
               );
@@ -442,7 +554,18 @@ export default function Dashboard() {
         </div>
 
         {/* RIGHT CONTENT PANEL */}
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: activeSection ? 'flex-start' : 'center', padding: '48px' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+
+          {/* QUICK ACCESS BAR */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', padding: '12px 32px', borderBottom: '1px solid rgba(255,255,255,0.07)', background: 'rgba(0,0,0,0.18)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
+            <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.28)', letterSpacing: '2.5px', marginRight: '6px', fontFamily: 'Georgia, serif', flexShrink: 0 }}>QUICK ACCESS</span>
+            {QUICK_LINKS.map(link => (
+              <QuickButton key={link.route} label={link.label} icon={link.icon} onClick={() => navigate(link.route)} />
+            ))}
+          </div>
+
+          {/* CONTENT AREA */}
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: activeSection ? 'flex-start' : 'center', padding: '48px' }}>
 
           {/* Welcome screen */}
           {!activeSection && (
@@ -470,20 +593,30 @@ export default function Dashboard() {
                 </p>
               </div>
 
-              {/* BOTTOM — Select Category */}
+              {/* QUICK ACCESS */}
               <div style={{ textAlign: 'center', width: '100%' }}>
-                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.7)', letterSpacing: '3px', marginBottom: '14px', fontFamily: 'Georgia, serif', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
-                  SELECT CATEGORY
+                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', letterSpacing: '3px', marginBottom: '14px', fontFamily: 'Georgia, serif' }}>
+                  QUICK ACCESS
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', gap: '120px', flexWrap: 'wrap' }}>
-                  {visibleSections.map(s => (
-                    <button key={s.id} onClick={() => handleSectionClick(s.id)}
-                      style={{ padding: '9px 18px', background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.4)', borderRadius: '2px', color: '#ffffff', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '11px', letterSpacing: '2px', transition: 'all 0.25s', backdropFilter: 'blur(8px)', textShadow: '0 1px 4px rgba(0,0,0,0.8)', whiteSpace: 'nowrap' }}
-                      onMouseOver={e => { e.target.style.background = 'rgba(232,196,154,0.25)'; e.target.style.borderColor = '#e8c49a'; e.target.style.color = '#e8c49a'; }}
-                      onMouseOut={e => { e.target.style.background = 'rgba(0,0,0,0.45)'; e.target.style.borderColor = 'rgba(255,255,255,0.4)'; e.target.style.color = '#ffffff'; }}
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>
+                  {[
+                    { label: 'Conditions', value: quickStats.conditions, icon: '♥', color: 'rgba(93,187,99,0.85)' },
+                    { label: 'Avoidances', value: quickStats.avoidances, icon: '⚠', color: 'rgba(255,107,53,0.85)' },
+                    { label: 'Saved Scans', value: quickStats.savedScans, icon: '★', color: 'rgba(116,185,255,0.85)' },
+                  ].map(stat => (
+                    <div key={stat.label} onClick={() => navigate('/my-profile')}
+                      style={{ cursor: 'pointer', background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: `1px solid ${stat.color}`, borderRadius: '4px', padding: '16px 24px', minWidth: '110px', transition: 'all 0.25s' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.16)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.transform = 'none'; }}
                     >
-                      {s.label}
-                    </button>
+                      <div style={{ fontSize: '20px', marginBottom: '6px', color: stat.color }}>{stat.icon}</div>
+                      <div style={{ fontSize: '26px', fontWeight: '300', color: '#ffffff', fontFamily: 'Georgia, serif', lineHeight: 1 }}>
+                        {stat.value !== null ? stat.value : '—'}
+                      </div>
+                      <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', letterSpacing: '1.5px', marginTop: '4px', fontFamily: 'Georgia, serif' }}>
+                        {stat.label.toUpperCase()}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -496,66 +629,97 @@ export default function Dashboard() {
             <div style={{ width: '100%', maxWidth: '680px', opacity: animating ? 0 : 1, transform: animating ? 'translateX(12px)' : 'translateX(0)', transition: 'all 0.25s ease' }}>
 
               {/* Special intro view for Begin Your Journey */}
-              {currentSection.intro ? (
+              {currentSection.howto ? (
                 <div>
                   <div style={{ marginBottom: '32px' }}>
-                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)', letterSpacing: '3px', marginBottom: '8px' }}>
-                      {t.welcome.toUpperCase()}
-                    </div>
+                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)', letterSpacing: '3px', marginBottom: '8px' }}>YOUR GUIDE</div>
                     <h2 style={{ margin: '0 0 20px', fontSize: '34px', fontWeight: '300', color: '#ffffff', fontFamily: 'Georgia, serif', letterSpacing: '0.5px', textShadow: '0 2px 16px rgba(0,0,0,0.5)' }}>
-                      Begin Your Journey
+                      How To Get Started
                     </h2>
 
-                    {/* Our Story */}
+                    {/* Steps */}
+                    <div style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '4px', padding: '24px 28px', marginBottom: '16px' }}>
+                      <div style={{ fontSize: '11px', color: '#e8c49a', letterSpacing: '3px', marginBottom: '20px' }}>STEP BY STEP GUIDE</div>
+                      {[
+                        { step: '01', title: 'Set Up Your Health Profile', desc: 'Add your medical conditions and any ingredients you need to avoid. This is the foundation of everything IngrediSure does for you.', route: '/profile', btn: 'Go to Health Profile' },
+                        { step: '02', title: 'Scan Your Groceries', desc: 'Search any product or scan its barcode to instantly see if it is safe for your specific health needs.', route: '/grocery', btn: 'Go to Grocery Scanner' },
+                        { step: '03', title: 'Find Safe Restaurants', desc: 'Enter your ZIP code to discover restaurants near you and check their menus for safe options.', route: '/restaurant', btn: 'Go to Restaurant Finder' },
+                        { step: '04', title: 'Plan Your Meals', desc: 'Use the weekly meal planner and recipe suggestions to build a full week of meals you can eat with confidence.', route: '/meal-planner', btn: 'Go to Meal Planner' },
+                        { step: '05', title: 'Track Your Nutrition', desc: 'Log your meals daily to track calories and macros against your personal goals.', route: '/nutrition', btn: 'Go to Nutrition Tracker' },
+                        { step: '06', title: 'Add Your Medications', desc: 'Enter your prescriptions and get real-time warnings about dangerous food and drug interactions.', route: '/nutrition', btn: 'Go to Medications' },
+                        { step: '07', title: 'Add Your Family Members', desc: 'Create health profiles for every member of your household and run safety checks for each person individually.', route: '/family', btn: 'Go to Family Hub' },
+                        { step: '08', title: 'View Your Profile', desc: 'See all your conditions, avoidances and saved scans in one place. Update or delete anything that changes.', route: '/my-profile', btn: 'Go to My Profile' },
+                      ].map((item, i) => (
+                        <div key={i} style={{ display: 'flex', gap: '16px', marginBottom: i < 7 ? '20px' : '0', paddingBottom: i < 7 ? '20px' : '0', borderBottom: i < 7 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
+                          <div style={{ fontSize: '22px', fontWeight: '300', color: 'rgba(232,196,154,0.5)', fontFamily: 'Georgia, serif', flexShrink: 0, width: '32px' }}>{item.step}</div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ color: '#ffffff', fontSize: '13px', fontWeight: '600', marginBottom: '4px', letterSpacing: '0.5px' }}>{item.title}</div>
+                            <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '12px', lineHeight: '1.6', fontStyle: 'italic', marginBottom: '8px' }}>{item.desc}</div>
+                            <button
+                              onClick={() => navigate(item.route)}
+                              style={{ padding: '6px 16px', background: 'rgba(232,196,154,0.15)', border: '1px solid rgba(232,196,154,0.35)', color: '#e8c49a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '11px', letterSpacing: '1px' }}
+                            >
+                              {item.btn} →
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : currentSection.story ? (
+                <div>
+                  <div style={{ marginBottom: '32px' }}>
+                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)', letterSpacing: '3px', marginBottom: '8px' }}>ABOUT INGREDISURE</div>
+                    <h2 style={{ margin: '0 0 20px', fontSize: '34px', fontWeight: '300', color: '#ffffff', fontFamily: 'Georgia, serif', letterSpacing: '0.5px', textShadow: '0 2px 16px rgba(0,0,0,0.5)' }}>
+                      Our Story
+                    </h2>
+
+                    {/* Block 1 — The Story Behind IngrediSure */}
                     <div style={{ background: 'rgba(232,196,154,0.08)', backdropFilter: 'blur(16px)', border: '1px solid rgba(232,196,154,0.2)', borderRadius: '4px', padding: '28px 32px', marginBottom: '16px' }}>
-                      <div style={{ fontSize: '11px', color: '#e8c49a', letterSpacing: '3px', marginBottom: '16px' }}>💚 THE STORY BEHIND INGREDISURE</div>
-
+                      <div style={{ fontSize: '11px', color: '#e8c49a', letterSpacing: '3px', marginBottom: '16px' }}>💚 {t.storyTitle}</div>
                       <p style={{ color: '#ffffff', fontSize: '16px', lineHeight: '2', margin: '0 0 16px', fontStyle: 'italic', fontWeight: '300', textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
-                        "I built IngrediSure watching my mother struggle with something most people never think about — knowing what was safe to eat."
+                        {t.storyQuote}
                       </p>
-
                       <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px', lineHeight: '2', margin: '0 0 14px' }}>
-                        Living with multiple health conditions, my mother faced this challenge every single day. At the grocery store she stood in the aisles reading ingredient label after ingredient label, trying to figure out what was safe and what to avoid — not knowing if something would interact with her medications or trigger a reaction. At restaurants she didn't feel confident ordering anything beyond the plainest, safest options she already knew — plain baked chicken, plain broccoli — not because she didn't want variety, but because she had no way to know whether anything else was safe for her. When ordering food online it was even harder — no one to ask, no way to check, just guessing and hoping for the best.
+                        {t.storyPara1}
                       </p>
-
                       <p style={{ color: 'rgba(255,255,255,0.88)', fontSize: '13px', lineHeight: '2', margin: '0 0 14px' }}>
-                        She deserved so much more than plain and predictable. She deserved to enjoy food — to explore flavors, try new restaurants, order groceries with confidence, and share meals with family without anxiety. There was no single tool that gave her that. So I built one.
+                        {t.storyPara2}
                       </p>
-
                       <p style={{ color: 'rgba(255,255,255,0.88)', fontSize: '13px', lineHeight: '2', margin: '0 0 14px' }}>
-                        But as I built it I realized — this isn't just for my mother. This is for <span style={{ color: '#e8c49a', fontWeight: '600' }}>everyone</span>. From the toddler with a severe food allergy to the teenager managing celiac disease. From the parent navigating a child's dietary restrictions to the grandparent managing diabetes, heart disease, or kidney conditions at 80 years old. IngrediSure is built for ages 1 through 100 — a helpful, intelligent companion for <span style={{ color: '#e8c49a', fontWeight: '600' }}>every member of your family.</span>
+                        {t.storyPara3}
                       </p>
-
                       <div style={{ borderTop: '1px solid rgba(232,196,154,0.2)', paddingTop: '16px', marginTop: '4px' }}>
                         <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '13px', lineHeight: '2', margin: 0, fontStyle: 'italic' }}>
-                          No one should have to guess whether their food is safe. No one should have to choose between enjoying a meal and protecting their health. <span style={{ color: '#e8c49a', fontWeight: '600' }}>That is what IngrediSure is here to change.</span>
+                          <span style={{ color: '#e8c49a', fontWeight: '600' }}>{t.storyClosing}</span>
                         </p>
                       </div>
                     </div>
 
-                    {/* What is IngrediSure */}
+                    {/* Block 2 — What Is IngrediSure? */}
                     <div style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '4px', padding: '24px 28px', marginBottom: '16px' }}>
                       <div style={{ fontSize: '11px', color: '#e8c49a', letterSpacing: '3px', marginBottom: '12px' }}>WHAT IS INGREDISURE?</div>
                       <p style={{ color: '#ffffff', fontSize: '14px', lineHeight: '1.9', margin: '0 0 12px', fontStyle: 'italic' }}>
-                        IngrediSure is the first all-in-one health intelligence hub that combines grocery safety scanning, restaurant finding, meal planning, and recipe suggestions — all filtered through YOUR personal health profile.
+                        IngrediSure is a dynamic all-in-one health intelligence hub that combines grocery safety scanning, restaurant finding, meal planning, and recipe suggestions — all filtered through YOUR personal health profile.
                       </p>
                       <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '13px', lineHeight: '1.9', margin: 0 }}>
-                        Unlike any other app on the market, IngrediSure doesn't just track calories or macros — it analyzes every ingredient against your specific medical conditions, dietary restrictions, and personal avoidances to give you a clear <span style={{ color: '#7dd97f', fontWeight: 'bold' }}>SAFE</span>, <span style={{ color: '#f0c040', fontWeight: 'bold' }}>CAUTION</span>, or <span style={{ color: '#ff6b6b', fontWeight: 'bold' }}>UNSAFE</span> verdict for everything you eat.
+                        Unlike any other app on the market, IngrediSure does not just track calories or macros — it analyzes every ingredient against your specific medical conditions, dietary restrictions, and personal avoidances to give you a clear <span style={{ color: '#7dd97f', fontWeight: 'bold' }}>SAFE</span>, <span style={{ color: '#f0c040', fontWeight: 'bold' }}>CAUTION</span>, or <span style={{ color: '#ff6b6b', fontWeight: 'bold' }}>UNSAFE</span> verdict for everything you eat.
                       </p>
                     </div>
 
-                    {/* Why IngrediSure is different */}
-                    <div style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '4px', padding: '24px 28px', marginBottom: '16px' }}>
+                    {/* Block 3 — Why IngrediSure Is Different */}
+                    <div style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '4px', padding: '24px 28px' }}>
                       <div style={{ fontSize: '11px', color: '#e8c49a', letterSpacing: '3px', marginBottom: '16px' }}>WHY INGREDISURE IS DIFFERENT</div>
                       {[
                         { icon: '✓', title: 'Medically Aware', desc: 'Built around your specific health conditions — diabetes, hypertension, kidney disease, celiac, and more.' },
                         { icon: '✓', title: 'All In One', desc: 'Grocery scanner, barcode scanner, restaurant finder, meal planner, recipes, and delivery services in a single app.' },
                         { icon: '✓', title: 'Real Ingredient Analysis', desc: 'We analyze actual ingredient lists — not just nutrition labels — so nothing harmful slips through.' },
                         { icon: '✓', title: 'Personalized To You', desc: 'Every safety verdict is based on YOUR conditions and avoidances, not generic dietary guidelines.' },
-                        { icon: '✓', title: 'Calorie & Macro Tracking', desc: 'Track daily calories, protein, carbs, fat, sodium and fiber with custom personal goals.' },
+                        { icon: '✓', title: 'Calorie and Macro Tracking', desc: 'Track daily calories, protein, carbs, fat, sodium and fiber with custom personal goals.' },
                         { icon: '✓', title: 'Medication Safety', desc: 'Add your medications and get instant warnings when foods you eat dangerously interact with them.' },
                       ].map((item, i) => (
-                        <div key={i} style={{ display: 'flex', gap: '14px', marginBottom: '14px' }}>
+                        <div key={i} style={{ display: 'flex', gap: '14px', marginBottom: i < 5 ? '14px' : '0' }}>
                           <span style={{ color: '#7dd97f', fontSize: '16px', flexShrink: 0, marginTop: '2px' }}>{item.icon}</span>
                           <div>
                             <div style={{ color: '#ffffff', fontSize: '13px', fontWeight: '600', marginBottom: '3px', letterSpacing: '0.5px' }}>{item.title}</div>
@@ -564,39 +728,6 @@ export default function Dashboard() {
                         </div>
                       ))}
                     </div>
-
-                    {/* How to get started */}
-                    <div style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '4px', padding: '24px 28px', marginBottom: '16px' }}>
-                      <div style={{ fontSize: '11px', color: '#e8c49a', letterSpacing: '3px', marginBottom: '16px' }}>HOW TO GET STARTED</div>
-                      {[
-                        { step: '01', title: 'Set Up Your Health Profile', desc: 'Add your medical conditions and any ingredients you need to avoid. This is the foundation of everything IngrediSure does for you.' },
-                        { step: '02', title: 'Scan Your Groceries', desc: 'Search any product or scan its barcode to instantly see if it is safe for your specific health needs.' },
-                        { step: '03', title: 'Find Safe Restaurants', desc: 'Enter your ZIP code to discover restaurants near you and check their menus for safe options.' },
-                        { step: '04', title: 'Plan Your Meals', desc: 'Use the weekly meal planner and recipe suggestions to build a full week of meals you can eat with confidence.' },
-                        { step: '05', title: 'Track Your Nutrition', desc: 'Log your meals daily to track calories and macros against your personal goals.' },
-                        { step: '06', title: 'Add Your Medications', desc: 'Enter your prescriptions and get real-time warnings about dangerous food and drug interactions.' },
-                      ].map((item, i) => (
-                        <div key={i} style={{ display: 'flex', gap: '16px', marginBottom: i < 3 ? '20px' : '0', paddingBottom: i < 3 ? '20px' : '0', borderBottom: i < 3 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
-                          <div style={{ fontSize: '22px', fontWeight: '300', color: 'rgba(232,196,154,0.5)', fontFamily: 'Georgia, serif', flexShrink: 0, width: '32px' }}>{item.step}</div>
-                          <div>
-                            <div style={{ color: '#ffffff', fontSize: '13px', fontWeight: '600', marginBottom: '4px', letterSpacing: '0.5px' }}>{item.title}</div>
-                            <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '12px', lineHeight: '1.6', fontStyle: 'italic' }}>{item.desc}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* CTA */}
-                    <ContentTile
-                      tile={{
-                        id: 'health', title: 'Set Up Your Health Profile Now',
-                        desc: 'Start here — it only takes 2 minutes and unlocks the full power of IngrediSure',
-                        route: '/profile', accent: 'rgba(93,187,99,0.9)',
-                        iconPath: <><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></>
-                      }}
-                      onClick={() => navigate('/profile')}
-                      isMobile={false}
-                    />
                   </div>
                 </div>
               ) : (
@@ -618,7 +749,8 @@ export default function Dashboard() {
               )}
             </div>
           )}
-        </div>
+          </div> {/* end CONTENT AREA */}
+        </div> {/* end RIGHT CONTENT PANEL */}
       </div>
     </div>
   );

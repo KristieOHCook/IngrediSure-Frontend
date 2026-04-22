@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Toast from './Toast';
 import LoadingScreen from './LoadingScreen';
 
 const API = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
@@ -27,6 +28,11 @@ const COMMON_CONDITIONS = [
 export default function FamilyHub() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedMember, setSelectedMember] = useState(null);
@@ -100,12 +106,12 @@ export default function FamilyHub() {
         setMembers(prev => prev.map(m =>
           m.id === editingMember.id ? { ...m, ...payload } : m
         ));
-        setMessage(`${memberName}'s profile updated!`);
+        showToast(`${memberName}'s profile updated! ✓`, 'success');
       } else {
         const res = await axios.post(`${API}/family/members`, payload,
           { headers: { Authorization: `Bearer ${user.token}` } });
         setMembers(prev => [...prev, res.data]);
-        setMessage(`${memberName} added to your family hub!`);
+        showToast(`${memberName} added to your family hub! ✓`, 'success');
       }
       resetForm();
       setShowAddForm(false);
@@ -119,7 +125,7 @@ export default function FamilyHub() {
         { headers: { Authorization: `Bearer ${user.token}` } });
       setMembers(prev => prev.filter(m => m.id !== id));
       if (selectedMember?.id === id) setSelectedMember(null);
-      setMessage(`${name} removed from family hub.`);
+      showToast(`${name} removed from family hub.`, 'delete');
       setTimeout(() => setMessage(''), 3000);
     } catch (err) { console.error(err); }
   };
@@ -176,6 +182,10 @@ export default function FamilyHub() {
           <button onClick={() => navigate('/dashboard')}
             style={{ background: 'transparent', color: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,255,255,0.3)', padding: '10px 24px', borderRadius: '2px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px' }}>
             ← DASHBOARD
+          </button>
+          <button onClick={() => navigate('/my-profile')}
+            style={{ background: 'transparent', color: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,255,255,0.3)', padding: '10px 24px', borderRadius: '2px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px' }}>
+            MY PROFILE
           </button>
         </div>
 
@@ -434,6 +444,7 @@ export default function FamilyHub() {
         )}
 
       </div>
+    {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }

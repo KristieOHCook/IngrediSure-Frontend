@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Toast from './Toast';
 import { useAccessibility } from '../AccessibilityContext';
 import LoadingScreen from './LoadingScreen';
 
@@ -188,6 +189,13 @@ export default function NutritionTracker() {
   const [todayLogs, setTodayLogs] = useState([]);
   const [medications, setMedications] = useState([]);
   const [message, setMessage] = useState('');
+  const [toast, setToast] = useState(null);
+  const [avoidances, setAvoidances] = useState([]);
+  const [newAvoidance, setNewAvoidance] = useState('');
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
   const [showAddMeal, setShowAddMeal] = useState(false);
   const [showAddMed, setShowAddMed] = useState(false);
   const [showGoalEditor, setShowGoalEditor] = useState(false);
@@ -227,12 +235,14 @@ export default function NutritionTracker() {
   const loadData = async (u) => {
     const headers = { Authorization: `Bearer ${u.token}` };
     try {
-      const [logsRes, medsRes] = await Promise.all([
+      const [logsRes, medsRes, avoRes] = await Promise.all([
         axios.get(`${API}/nutrition/today/${u.userId}`, { headers }),
         axios.get(`${API}/medications/user/${u.userId}`, { headers }),
+        axios.get(`${API}/avoidances/user/${u.userId}`, { headers }),
       ]);
       setTodayLogs(logsRes.data || []);
       setMedications(medsRes.data || []);
+      setAvoidances(avoRes.data || []);
       checkInteractions(medsRes.data || [], logsRes.data || []);
     } catch (err) {
       console.error('Load error:', err);
@@ -325,7 +335,7 @@ export default function NutritionTracker() {
       setFat(''); setSodium(''); setFiber('');
       setAutoCalculated(false);
       setShowAddMeal(false);
-      setMessage('Meal logged!');
+      showToast('Meal logged! ✓', 'success');
       setTimeout(() => setMessage(''), 3000);
       loadData(user);
     } catch (err) { console.error('Log error:', err); }
@@ -361,6 +371,33 @@ export default function NutritionTracker() {
       });
       setMedications(prev => prev.filter(m => m.id !== id));
     } catch (err) { console.error(err); }
+  };
+
+  const addAvoidance = async () => {
+    if (!newAvoidance.trim()) return;
+    try {
+      const res = await axios.post(`${API}/avoidances`, {
+        ingredientName: newAvoidance.trim(),
+        userId: user.userId,
+      }, { headers: { Authorization: `Bearer ${user.token}` } });
+      setAvoidances(prev => [...prev, res.data]);
+      setNewAvoidance('');
+      showToast('Ingredient added!', 'success');
+    } catch (err) {
+      showToast('Error adding ingredient.', 'error');
+    }
+  };
+
+  const removeAvoidance = async (id) => {
+    try {
+      await axios.delete(`${API}/avoidances/${id}`, {
+        headers: { Authorization: `Bearer ${user.token}` }
+      });
+      setAvoidances(prev => prev.filter(a => a.id !== id));
+      showToast('Ingredient removed.', 'delete');
+    } catch (err) {
+      showToast('Error removing ingredient.', 'error');
+    }
   };
 
   const totals = todayLogs.reduce((acc, log) => ({
@@ -453,6 +490,10 @@ export default function NutritionTracker() {
             style={{ background: 'transparent', color: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,255,255,0.3)', padding: '10px 24px', borderRadius: '2px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px' }}>
             ← DASHBOARD
           </button>
+          <button onClick={() => navigate('/my-profile')}
+            style={{ background: 'transparent', color: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,255,255,0.3)', padding: '10px 24px', borderRadius: '2px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px' }}>
+            MY PROFILE
+          </button>
         </div>
 
         {/* Interaction alert banner */}
@@ -474,6 +515,7 @@ export default function NutritionTracker() {
         <div style={{ display: 'flex', gap: '10px', marginBottom: '24px', flexWrap: 'wrap' }}>
           <button style={tabStyle(activeTab === 'tracker')} onClick={() => setActiveTab('tracker')}>CALORIE TRACKER</button>
           <button style={tabStyle(activeTab === 'medications')} onClick={() => setActiveTab('medications')}>MY MEDICATIONS</button>
+          <button style={tabStyle(activeTab === 'restrictions')} onClick={() => setActiveTab('restrictions')}>RESTRICTIONS</button>
           <button
             style={{ ...tabStyle(activeTab === 'interactions'), ...(interactions.filter(i => i.conflict).length > 0 ? { border: '2px solid #ff2222', color: '#ff2222', background: 'rgba(255,34,34,0.15)', fontWeight: '900' } : {}) }}
             onClick={() => setActiveTab('interactions')}
@@ -893,6 +935,67 @@ export default function NutritionTracker() {
           </>
         )}
 
+        {/* RESTRICTIONS TAB */}
+        {activeTab === 'restrictions' && (
+          <div style={sectionStyle}>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', letterSpacing: '3px', marginBottom: '6px' }}>
+              INGREDIENT AVOIDANCES
+            </div>
+            <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '13px', fontStyle: 'italic', marginBottom: '24px', lineHeight: '1.7' }}>
+              Specific ingredients to always flag during safety checks, regardless of condition rules.
+            </p>
+
+            {/* Existing avoidance chips */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px', minHeight: '32px' }}>
+              {avoidances.length === 0 ? (
+                <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px', fontStyle: 'italic' }}>
+                  No ingredients added yet.
+                </span>
+              ) : (
+                avoidances.map(a => (
+                  <div key={a.id} style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '8px',
+                    padding: '6px 14px',
+                    background: 'rgba(255,107,53,0.12)',
+                    border: '1px solid rgba(255,107,53,0.45)',
+                    borderRadius: '2px', color: '#ffffff',
+                    fontSize: '12px', fontFamily: 'Georgia, serif', letterSpacing: '0.5px',
+                  }}>
+                    {a.ingredientName}
+                    <button
+                      onClick={() => removeAvoidance(a.id)}
+                      style={{ background: 'none', border: 'none', color: 'rgba(255,150,100,0.8)', cursor: 'pointer', fontSize: '16px', padding: 0, lineHeight: 1, fontWeight: 'bold' }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Add new avoidance */}
+            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.55)', letterSpacing: '2px', marginBottom: '10px' }}>
+              ADD INGREDIENT TO AVOID
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <input
+                type="text"
+                placeholder="e.g. MSG, shellfish, red dye 40..."
+                value={newAvoidance}
+                onChange={e => setNewAvoidance(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addAvoidance()}
+                style={{ ...inputStyle, flex: 1 }}
+              />
+              <button
+                onClick={addAvoidance}
+                style={{ padding: '11px 24px', background: 'rgba(255,107,53,0.2)', border: '1px solid rgba(255,107,53,0.5)', borderRadius: '4px', color: 'rgba(255,150,100,1)', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '11px', letterSpacing: '1px', whiteSpace: 'nowrap' }}
+              >
+                ADD
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* FOOD INTERACTIONS TAB */}
         {activeTab === 'interactions' && (
           <>
@@ -964,6 +1067,7 @@ export default function NutritionTracker() {
         )}
 
       </div>
+    {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }

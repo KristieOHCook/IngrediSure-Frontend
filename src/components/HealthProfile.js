@@ -61,9 +61,8 @@ export default function HealthProfile() {
     if (!conditionToAdd) return;
     try {
       const res = await axios.post(`${API}/conditions`, {
-        userId: user.userId,
         conditionName: conditionToAdd,
-        severity: 'moderate',
+        userId: user.userId,
       }, { headers: headers(user) });
       setConditions(prev => [...prev, res.data]);
       setNewCondition('');
@@ -83,8 +82,8 @@ export default function HealthProfile() {
     if (!newAvoidance.trim()) return;
     try {
       const res = await axios.post(`${API}/avoidances`, {
-        userId: user.userId,
         ingredientName: newAvoidance.trim(),
+        userId: user.userId,
       }, { headers: headers(user) });
       setAvoidances(prev => [...prev, res.data]);
       setNewAvoidance('');
@@ -158,7 +157,7 @@ export default function HealthProfile() {
           </div>
           <button
             onClick={() => navigate('/dashboard')}
-            style={{ background: 'transparent', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.3)', padding: '10px 24px', borderRadius: '2px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px' }}
+            style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.5)', padding: '10px 24px', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px', fontWeight: '600' }}
           >
             ← DASHBOARD
           </button>
@@ -215,7 +214,19 @@ export default function HealthProfile() {
               <select
                 value={newCondition}
                 onChange={e => setNewCondition(e.target.value)}
-                style={{ ...inputStyle, flex: 1 }}
+                style={{ 
+  ...inputStyle, 
+  flex: 1, 
+  color: '#ffffff',
+  background: 'rgba(255,255,255,0.1)',
+  WebkitAppearance: 'none',
+  appearance: 'none',
+  cursor: 'pointer',
+  paddingRight: '30px',
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+  backgroundRepeat: 'no-repeat',
+  backgroundPosition: 'right 10px center',
+}}
               >
                 <option value="">Select a condition...</option>
                 {CONDITIONS.map(c => <option key={c} value={c}>{c}</option>)}

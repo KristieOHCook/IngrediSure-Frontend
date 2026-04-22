@@ -154,9 +154,13 @@ export default function LegalDisclaimers() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <ReadAloudButton text={fullDisclaimerText} />
-            <button onClick={() => navigate(-1)}
+            <button onClick={() => navigate('/dashboard')}
               style={{ background: 'transparent', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.3)', padding: '8px 20px', borderRadius: '2px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px' }}>
-              ← BACK
+              ← DASHBOARD
+            </button>
+            <button onClick={() => navigate('/my-profile')}
+              style={{ background: 'transparent', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.3)', padding: '8px 20px', borderRadius: '2px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px' }}>
+              MY PROFILE
             </button>
           </div>
         </div>

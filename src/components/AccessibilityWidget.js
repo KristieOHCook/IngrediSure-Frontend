@@ -88,6 +88,8 @@ export default function AccessibilityWidget() {
 
   const readPage = () => {
     if (isReading) { stopSpeaking(); return; }
+    // Force stop any existing speech first
+    window.speechSynthesis.cancel();
 
     // Grab all readable text elements in order
     const elements = Array.from(document.querySelectorAll(
@@ -303,8 +305,26 @@ export default function AccessibilityWidget() {
 
         {/* Drag hint */}
         {!minimized && (
-          <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.22)', letterSpacing: '0.5px', pointerEvents: 'none' }}>
-            drag to move
+          <div style={{
+            padding: '4px 12px',
+            background: 'rgba(0,0,0,0.85)',
+            border: '1px solid rgba(255,255,255,0.35)',
+            borderRadius: '14px',
+            color: 'rgba(255,255,255,0.85)',
+            cursor: 'grab',
+            fontFamily: 'Georgia, serif',
+            fontSize: '11px',
+            letterSpacing: '0.5px',
+            whiteSpace: 'nowrap',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px',
+            pointerEvents: 'none',
+          }}>
+            <span style={{ fontSize: '11px' }}>✥</span>
+            <span>drag to move</span>
           </div>
         )}
       </div>

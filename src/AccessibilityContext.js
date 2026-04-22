@@ -59,24 +59,58 @@ export function AccessibilityProvider({ children }) {
 
   const speak = (text) => {
     if (!window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
 
-    // Set language for speech
     const langMap = {
       en: 'en-US', es: 'es-ES', zh: 'zh-CN',
       ja: 'ja-JP', fr: 'fr-FR', ar: 'ar-SA', hi: 'hi-IN',
     };
-    utterance.lang = langMap[language] || 'en-US';
-    utterance.rate = 0.9;
-    utterance.pitch = 1;
-    utterance.volume = 1;
-    utterance.onend = () => setIsReading(false);
-    utterance.onerror = () => setIsReading(false);
 
-    setIsReading(true);
-    window.speechSynthesis.speak(utterance);
+    const targetLang = langMap[language] || 'en-US';
+    const langPrefix = targetLang.split('-')[0];
+
+    window.speechSynthesis.cancel();
+
+    const doSpeak = () => {
+      const msg = new SpeechSynthesisUtterance();
+      msg.text = text;
+      msg.lang = targetLang;
+      msg.rate = 0.85;
+      msg.pitch = 1;
+      msg.volume = 1;
+
+      const voices = window.speechSynthesis.getVoices();
+      console.log('Total voices available:', voices.length);
+
+      if (voices.length > 0) {
+        const voice = voices.find(v => v.lang.startsWith(langPrefix));
+        if (voice) {
+          msg.voice = voice;
+          console.log('Selected voice:', voice.name);
+        } else {
+          console.log('No voice found for:', langPrefix);
+        }
+      }
+
+      msg.onend = () => setIsReading(false);
+      msg.onerror = (e) => {
+        console.log('Error:', e.error);
+        setIsReading(false);
+      };
+
+      setIsReading(true);
+      window.speechSynthesis.speak(msg);
+    };
+
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length === 0) {
+      console.log('Waiting for voices to load...');
+      window.speechSynthesis.addEventListener('voiceschanged', doSpeak, { once: true });
+    } else {
+      doSpeak();
+    }
   };
+    // Set language for speech
+    
 
   const stopSpeaking = () => {
     window.speechSynthesis?.cancel();

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Toast from './Toast';
 import { useAccessibility } from '../AccessibilityContext';
 import LoadingScreen from './LoadingScreen';
 
@@ -45,6 +46,11 @@ export default function MealPlanner() {
   const navigate = useNavigate();
   const { t } = useAccessibility();
   const [user, setUser] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
   const [plan, setPlan] = useState(null);
   const [verdicts, setVerdicts] = useState({});
   const [loading, setLoading] = useState(false);
@@ -170,7 +176,7 @@ export default function MealPlanner() {
         recipeName: `${dayMeals.breakfast.name}, ${dayMeals.lunch.name}, ${dayMeals.dinner.name}`,
         items: JSON.stringify(items),
       }, { headers: { Authorization: `Bearer ${user.token}` } });
-      setMessage(`${day}'s grocery list saved!`);
+      showToast(`${day}'s grocery list saved! ✓`, 'success');
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
       console.error('Save error:', err);
@@ -373,9 +379,15 @@ export default function MealPlanner() {
           <div style={{ display: 'flex', gap: '10px' }}>
             <button
               onClick={() => navigate('/dashboard')}
-              style={{ background: 'transparent', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.3)', padding: '10px 24px', borderRadius: '2px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px' }}
+              style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.5)', padding: '10px 24px', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px', fontWeight: '600' }}
             >
               ← DASHBOARD
+            </button>
+            <button
+              onClick={() => navigate('/my-profile')}
+              style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.5)', padding: '10px 24px', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px', fontWeight: '600' }}
+            >
+              MY PROFILE
             </button>
           </div>
         </div>
@@ -588,6 +600,7 @@ export default function MealPlanner() {
           </>
         )}
       </div>
+    {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }

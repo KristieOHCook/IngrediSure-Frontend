@@ -21,6 +21,7 @@ import MealPlanner from './components/MealPlanner';
 import MealPrepServices from './components/MealPrepServices';
 import NutritionTracker from './components/NutritionTracker';
 import FamilyHub from './components/FamilyHub';
+import MyProfile from './components/MyProfile';
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<HealthProfile />} />
+        <Route path="/my-profile" element={<MyProfile />} />
         <Route path="/grocery" element={<GroceryScanner />} />
         <Route path="/restaurant" element={<RestaurantFinder />} />
         <Route path="/admin" element={<AdminDashboard />} />

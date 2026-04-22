@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Toast from './Toast';
 import LoadingScreen from './LoadingScreen';
 
 const API = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
@@ -9,6 +10,11 @@ const BG = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200&q=9
 export default function GroceryListManager() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
   const [lists, setLists] = useState([]);
   const [selectedList, setSelectedList] = useState(null);
   const [parsedItems, setParsedItems] = useState([]);
@@ -108,7 +114,7 @@ export default function GroceryListManager() {
       setLists(prev => [res.data, ...prev]);
       setNewListName('');
       setShowNewList(false);
-      setMessage('List created!');
+      showToast('List created! ✓', 'success');
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
       console.error('Create error:', err);
@@ -126,7 +132,7 @@ export default function GroceryListManager() {
         setSelectedList(null);
         setParsedItems([]);
       }
-      setMessage('List deleted.');
+      showToast('List updated! ✓', 'success');
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
       console.error('Delete error:', err);
@@ -195,9 +201,15 @@ export default function GroceryListManager() {
             </button>
             <button
               onClick={() => navigate('/dashboard')}
-              style={{ background: 'transparent', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.3)', padding: '10px 24px', borderRadius: '2px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px' }}
+              style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.5)', padding: '10px 24px', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px', fontWeight: '600' }}
             >
               ← DASHBOARD
+            </button>
+            <button
+              onClick={() => navigate('/my-profile')}
+              style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.5)', padding: '10px 24px', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px', fontWeight: '600' }}
+            >
+              MY PROFILE
             </button>
           </div>
         </div>
@@ -403,6 +415,7 @@ export default function GroceryListManager() {
           </div>
         </div>
       </div>
+    {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }

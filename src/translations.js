@@ -70,6 +70,12 @@ const translations = {
     highContrast: 'High Contrast',
     accessibility: 'Accessibility',
     language: 'Language',
+    storyTitle: 'THE STORY BEHIND INGREDISURE',
+    storyQuote: '"I built IngrediSure watching my mother struggle with something most people never think about — knowing what was safe to eat."',
+    storyPara1: 'Living with multiple health conditions, my mother faced this challenge every single day. At the grocery store she stood in the aisles reading ingredient label after ingredient label, trying to figure out what was safe and what to avoid — not knowing if something would interact with her medications or trigger a reaction. At restaurants she did not feel confident ordering anything beyond the plainest, safest options she already knew — plain baked chicken, plain broccoli — not because she did not want variety, but because she had no way to know whether anything else was safe for her. When ordering food online it was even harder — no one to ask, no way to check, just guessing and hoping for the best.',
+    storyPara2: 'She deserved so much more than plain and predictable. She deserved to enjoy food — to explore flavors, try new restaurants, order groceries with confidence, and share meals with family without anxiety. There was no single tool that gave her that. So I built one.',
+    storyPara3: 'But as I built it I realized — this is not just for my mother. This is for everyone. From the toddler with a severe food allergy to the teenager managing celiac disease. From the parent navigating a child\'s dietary restrictions to the grandparent managing diabetes, heart disease, or kidney conditions at 80 years old. IngrediSure is built for ages 1 through 100 — a helpful, intelligent companion for every member of your family.',
+    storyClosing: 'No one should have to guess whether their food is safe. No one should have to choose between enjoying a meal and protecting their health. That is what IngrediSure is here to change.',
   },
 
   es: {
@@ -130,6 +136,12 @@ const translations = {
     highContrast: 'Alto Contraste',
     accessibility: 'Accesibilidad',
     language: 'Idioma',
+    storyTitle: 'LA HISTORIA DETRÁS DE INGREDISURE',
+    storyQuote: '"Construí IngrediSure viendo a mi madre luchar con algo en lo que la mayoría de personas nunca piensa — saber qué era seguro comer."',
+    storyPara1: 'Viviendo con múltiples condiciones de salud, mi madre enfrentaba este desafío todos los días. En el supermercado leía etiqueta tras etiqueta tratando de descubrir qué era seguro. En los restaurantes solo pedía opciones simples que ya conocía porque no tenía forma de saber si algo más era seguro para ella.',
+    storyPara2: 'Ella merecía mucho más que lo simple y predecible. Merecía disfrutar la comida — explorar sabores, probar nuevos restaurantes y hacer compras con confianza. No había una sola herramienta que le diera eso. Así que construí una.',
+    storyPara3: 'Pero al construirla me di cuenta — esto no es solo para mi madre. Es para todos. Desde el bebé con alergia alimentaria severa hasta el abuelo que maneja diabetes o enfermedad cardíaca. IngrediSure es para edades de 1 a 100 años.',
+    storyClosing: 'Nadie debería tener que adivinar si su comida es segura. Eso es lo que IngrediSure está aquí para cambiar.',
   },
 
   zh: {
@@ -190,6 +202,12 @@ const translations = {
     highContrast: '高对比度',
     accessibility: '无障碍设置',
     language: '语言',
+    storyTitle: 'INGREDISURE背后的故事',
+    storyQuote: '"我建立IngrediSure是因为看到我的母亲在为一件大多数人从未想到的事情而挣扎——知道什么食物是安全的。"',
+    storyPara1: '我的母亲患有多种健康疾病，每天都面临这个挑战。在超市里，她一遍又一遍地阅读成分标签，试图找出什么是安全的。在餐厅里，她只点已知安全的简单食物，因为她没有办法知道其他食物是否对她安全。',
+    storyPara2: '她值得拥有更多。她值得享受食物——探索新口味，尝试新餐厅，自信地购物。没有一个工具能给她这些。所以我建立了一个。',
+    storyPara3: 'IngrediSure适合1到100岁的所有人——从严重食物过敏的婴儿到管理糖尿病的老人。它是每个家庭成员的智能健康伴侣。',
+    storyClosing: '没有人应该猜测他们的食物是否安全。这就是IngrediSure存在的意义。',
   },
 
   ja: {
@@ -250,6 +268,12 @@ const translations = {
     highContrast: 'ハイコントラスト',
     accessibility: 'アクセシビリティ',
     language: '言語',
+    storyTitle: 'INGREDISUREの背景にあるストーリー',
+    storyQuote: '"私がIngrediSureを作ったのは、母が多くの人が考えもしないことで苦労しているのを見たからです——何が安全に食べられるかを知ること。"',
+    storyPara1: '母は複数の健康状態を抱えながら、毎日この課題に直面していました。スーパーマーケットでは成分表示を読み続け、何が安全かを理解しようとしていました。レストランでは安全だとわかっている簡単なものしか注文できませんでした。',
+    storyPara2: '母はもっと多くのものに値しました。食事を楽しみ、新しいレストランを試み、自信を持って買い物できるべきでした。そのようなツールはありませんでした。だから私が作りました。',
+    storyPara3: 'IngrediSureは1歳から100歳まですべての人のために作られています——重篤な食物アレルギーの幼児から糖尿病を管理するお年寄りまで。',
+    storyClosing: '誰も自分の食べ物が安全かどうか推測する必要はありません。それがIngrediSureの使命です。',
   },
 
   fr: {
@@ -310,6 +334,12 @@ const translations = {
     highContrast: 'Contraste élevé',
     accessibility: 'Accessibilité',
     language: 'Langue',
+    storyTitle: "L'HISTOIRE DERRIÈRE INGREDISURE",
+    storyQuote: '"J\'ai créé IngrediSure en regardant ma mère lutter avec quelque chose que la plupart des gens ne considèrent jamais — savoir ce qui était sûr à manger."',
+    storyPara1: "Vivant avec de multiples problèmes de santé, ma mère faisait face à ce défi chaque jour. Dans les épiceries, elle lisait étiquette après étiquette. Au restaurant, elle ne commandait que des options simples qu'elle connaissait déjà comme sûres.",
+    storyPara2: "Elle méritait tellement plus. Elle méritait de profiter de la nourriture — d'explorer les saveurs, d'essayer de nouveaux restaurants, de faire ses courses avec confiance. Il n'existait pas d'outil unique pour cela. Alors je l'ai créé.",
+    storyPara3: "IngrediSure est conçu pour les personnes de 1 à 100 ans — du nourrisson allergique au grand-parent gérant le diabète ou les maladies cardiaques.",
+    storyClosing: "Personne ne devrait avoir à deviner si sa nourriture est sûre. C'est ce qu'IngrediSure est là pour changer.",
   },
 
   ar: {
@@ -370,6 +400,12 @@ const translations = {
     highContrast: 'تباين عالٍ',
     accessibility: 'إمكانية الوصول',
     language: 'اللغة',
+    storyTitle: 'القصة وراء INGREDISURE',
+    storyQuote: '"بنيت IngrediSure وأنا أرى أمي تكافح مع شيء لا يفكر فيه معظم الناس — معرفة ما هو آمن للأكل."',
+    storyPara1: 'كانت أمي تعاني من حالات صحية متعددة وتواجه هذا التحدي كل يوم. في محلات البقالة كانت تقرأ ملصق بعد ملصق محاولة معرفة ما هو آمن. في المطاعم كانت تطلب فقط الأطعمة البسيطة التي تعرفها بالفعل.',
+    storyPara2: 'كانت تستحق أكثر بكثير. كانت تستحق الاستمتاع بالطعام وتجربة مطاعم جديدة والتسوق بثقة. لم يكن هناك أداة واحدة تمنحها ذلك. لذلك بنيت واحدة.',
+    storyPara3: 'IngrediSure مصمم للأشخاص من عمر 1 إلى 100 عام — من الرضيع المصاب بحساسية شديدة للطعام إلى المسن الذي يدير مرض السكري أو أمراض القلب.',
+    storyClosing: 'لا ينبغي لأحد أن يخمن ما إذا كان طعامه آمناً. هذا هو ما IngrediSure هنا لتغييره.',
   },
 
   hi: {
@@ -430,6 +466,12 @@ const translations = {
     highContrast: 'उच्च कंट्रास्ट',
     accessibility: 'पहुंच योग्यता',
     language: 'भाषा',
+    storyTitle: 'INGREDISURE के पीछे की कहानी',
+    storyQuote: '"मैंने IngrediSure अपनी माँ को उस चीज़ से जूझते देखकर बनाया जिसके बारे में ज़्यादातर लोग कभी नहीं सोचते — यह जानना कि क्या खाना सुरक्षित है।"',
+    storyPara1: 'कई स्वास्थ्य स्थितियों के साथ जीते हुए, मेरी माँ हर दिन इस चुनौती का सामना करती थीं। किराने की दुकान में वो एक के बाद एक लेबल पढ़ती थीं। रेस्तरां में वो केवल वही सरल चीजें मंगाती थीं जो उन्हें पहले से सुरक्षित पता थीं।',
+    storyPara2: 'वो इससे कहीं ज़्यादा की हकदार थीं। वो खाने का आनंद लेने, नए रेस्तरां आज़माने और आत्मविश्वास से खरीदारी करने की हकदार थीं। ऐसा कोई एक उपकरण नहीं था। तो मैंने एक बनाया।',
+    storyPara3: 'IngrediSure 1 से 100 साल के सभी लोगों के लिए बना है — गंभीर खाद्य एलर्जी वाले बच्चे से लेकर मधुमेह या हृदय रोग से जूझते बुजुर्ग तक।',
+    storyClosing: 'किसी को भी यह अनुमान नहीं लगाना चाहिए कि उनका खाना सुरक्षित है या नहीं। यही IngrediSure का मिशन है।',
   },
 };
 

@@ -60,8 +60,8 @@ export default function Feedback() {
   const [hoveredRating, setHoveredRating] = useState(0);
   const [liked, setLiked] = useState([]);
   const [disliked, setDisliked] = useState([]);
-  const [useCase, setUseCase] = useState('');
-  const [howOften, setHowOften] = useState('');
+  const [useCases, setUseCases] = useState([]);
+  const [howOften, setHowOften] = useState([]);
   const [wouldRecommend, setWouldRecommend] = useState('');
   const [mostValuableFeature, setMostValuableFeature] = useState('');
   const [missingFeature, setMissingFeature] = useState('');
@@ -80,6 +80,8 @@ export default function Feedback() {
 
   const toggleLike = (id) => setLiked(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   const toggleDislike = (id) => setDisliked(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  const toggleUseCase = (uc) => setUseCases(prev => prev.includes(uc) ? prev.filter(i => i !== uc) : [...prev, uc]);
+  const toggleHowOften = (h) => setHowOften(prev => prev.includes(h) ? prev.filter(i => i !== h) : [...prev, h]);
 
   const handleSubmit = async () => {
     if (rating === 0) { setError('Please select a star rating.'); return; }
@@ -89,8 +91,8 @@ export default function Feedback() {
       const likedLabels = liked.map(id => LIKE_OPTIONS.find(o => o.id === id)?.label).join(', ');
       const dislikedLabels = disliked.map(id => DISLIKE_OPTIONS.find(o => o.id === id)?.label).join(', ');
       const fullSuggestion = [
-        useCase && `Use case: ${useCase}`,
-        howOften && `Usage frequency: ${howOften}`,
+        useCases.length > 0 && `Use case: ${useCases.join(', ')}`,
+        howOften.length > 0 && `Usage frequency: ${howOften.join(', ')}`,
         wouldRecommend && `Would recommend: ${wouldRecommend}`,
         mostValuableFeature && `Most valuable feature: ${mostValuableFeature}`,
         missingFeature && `Missing feature: ${missingFeature}`,
@@ -121,6 +123,17 @@ export default function Feedback() {
     borderRadius: '4px', padding: '28px 32px',
     marginBottom: '20px',
   };
+
+  const goldChipStyle = (active) => ({
+    padding: '8px 16px',
+    background: active ? 'rgba(232,196,154,0.2)' : 'rgba(255,255,255,0.06)',
+    border: active ? '1px solid rgba(232,196,154,0.6)' : '1px solid rgba(255,255,255,0.15)',
+    borderRadius: '2px',
+    color: active ? '#e8c49a' : 'rgba(255,255,255,0.75)',
+    cursor: 'pointer', fontFamily: 'Georgia, serif',
+    fontSize: '12px', letterSpacing: '0.5px',
+    transition: 'all 0.2s',
+  });
 
   const chipStyle = (active, color = 'green') => ({
     padding: '8px 16px',
@@ -178,6 +191,10 @@ export default function Feedback() {
             style={{ background: 'transparent', color: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,255,255,0.3)', padding: '10px 24px', borderRadius: '2px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px' }}>
             ← DASHBOARD
           </button>
+          <button onClick={() => navigate('/my-profile')}
+            style={{ background: 'transparent', color: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,255,255,0.3)', padding: '10px 24px', borderRadius: '2px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px' }}>
+            MY PROFILE
+          </button>
         </div>
 
         {/* Why your feedback matters */}
@@ -187,7 +204,7 @@ export default function Feedback() {
             <div>
               <div style={{ fontSize: '12px', color: '#e8c49a', letterSpacing: '2px', marginBottom: '8px' }}>WHY YOUR FEEDBACK MATTERS</div>
               <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px', lineHeight: '1.9', margin: '0 0 10px', fontStyle: 'italic' }}>
-                IngrediSure was inspired by a mother's daily struggle — spending hours reading ingredient labels, guessing what was safe to eat, and trying to manage multiple health conditions without a clear guide.
+                This app was inspired by a mother's daily struggle — spending hours reading ingredient labels, guessing what was safe to eat, and trying to manage multiple health conditions without a clear guide.
               </p>
               <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '13px', lineHeight: '1.8', margin: 0 }}>
                 Your honest feedback helps us build the tools that people with health conditions truly need. This survey takes about 3 minutes and directly influences our next update. <span style={{ color: '#e8c49a', fontWeight: '600' }}>Your voice shapes this platform.</span>
@@ -223,7 +240,7 @@ export default function Feedback() {
             <div style={sectionStyle}>
               <h2 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: '400', color: 'rgba(255,255,255,0.7)', letterSpacing: '3px' }}>OVERALL RATING</h2>
               <p style={{ margin: '0 0 24px', fontSize: '13px', color: 'rgba(255,255,255,0.75)', fontStyle: 'italic' }}>
-                How would you rate your overall experience with IngrediSure?
+                How would you rate your overall experience with this app?
               </p>
               <div style={{ display: 'flex', gap: '14px', alignItems: 'center', marginBottom: '12px' }}>
                 {[1, 2, 3, 4, 5].map(star => (
@@ -243,25 +260,26 @@ export default function Feedback() {
             </div>
 
             <div style={sectionStyle}>
-              <h2 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: '400', color: 'rgba(255,255,255,0.7)', letterSpacing: '3px' }}>WHY ARE YOU USING INGREDISURE?</h2>
+              <h2 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: '400', color: 'rgba(255,255,255,0.7)', letterSpacing: '3px' }}>WHY ARE YOU USING THIS APP?</h2>
               <p style={{ margin: '0 0 20px', fontSize: '13px', color: 'rgba(255,255,255,0.75)', fontStyle: 'italic' }}>
-                Helps us understand who we are serving so we can improve for you
+                Select all that apply — helps us understand who we are serving
               </p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                 {USE_CASES.map(uc => (
-                  <button key={uc} onClick={() => setUseCase(uc)} style={chipStyle(useCase === uc)}>
-                    {useCase === uc ? '✓ ' : ''}{uc}
+                  <button key={uc} onClick={() => toggleUseCase(uc)} style={goldChipStyle(useCases.includes(uc))}>
+                    {useCases.includes(uc) ? '✓ ' : ''}{uc}
                   </button>
                 ))}
               </div>
             </div>
 
             <div style={sectionStyle}>
-              <h2 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: '400', color: 'rgba(255,255,255,0.7)', letterSpacing: '3px' }}>HOW OFTEN DO YOU USE INGREDISURE?</h2>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '16px' }}>
+              <h2 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: '400', color: 'rgba(255,255,255,0.7)', letterSpacing: '3px' }}>HOW OFTEN DO YOU USE THE APP?</h2>
+              <p style={{ margin: '8px 0 16px', fontSize: '13px', color: 'rgba(255,255,255,0.75)', fontStyle: 'italic' }}>Select all that apply</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                 {HOW_OFTEN.map(h => (
-                  <button key={h} onClick={() => setHowOften(h)} style={chipStyle(howOften === h)}>
-                    {howOften === h ? '✓ ' : ''}{h}
+                  <button key={h} onClick={() => toggleHowOften(h)} style={goldChipStyle(howOften.includes(h))}>
+                    {howOften.includes(h) ? '✓ ' : ''}{h}
                   </button>
                 ))}
               </div>
@@ -320,7 +338,7 @@ export default function Feedback() {
             <div style={sectionStyle}>
               <h2 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: '400', color: 'rgba(255,255,255,0.7)', letterSpacing: '3px' }}>WHAT FEATURE ARE WE MISSING?</h2>
               <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'rgba(255,255,255,0.75)', fontStyle: 'italic' }}>
-                What would make IngrediSure indispensable to you?
+                What would make this app indispensable to you?
               </p>
               <textarea value={missingFeature} onChange={e => setMissingFeature(e.target.value)}
                 placeholder="e.g. I wish it could connect to my grocery store loyalty card to automatically flag unsafe products in my purchase history..."
@@ -335,9 +353,9 @@ export default function Feedback() {
         {step === 4 && (
           <div>
             <div style={sectionStyle}>
-              <h2 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: '400', color: 'rgba(255,255,255,0.7)', letterSpacing: '3px' }}>WOULD YOU RECOMMEND INGREDISURE?</h2>
+              <h2 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: '400', color: 'rgba(255,255,255,0.7)', letterSpacing: '3px' }}>WOULD YOU RECOMMEND THIS APP?</h2>
               <p style={{ margin: '0 0 20px', fontSize: '13px', color: 'rgba(255,255,255,0.75)', fontStyle: 'italic' }}>
-                Would you recommend IngrediSure to a friend or family member with health conditions?
+                Would you recommend this app to a friend or family member with health conditions?
               </p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                 {WOULD_RECOMMEND.map(r => (
@@ -351,7 +369,7 @@ export default function Feedback() {
             <div style={sectionStyle}>
               <h2 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: '400', color: 'rgba(255,255,255,0.7)', letterSpacing: '3px' }}>ANY FINAL THOUGHTS?</h2>
               <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'rgba(255,255,255,0.75)', fontStyle: 'italic' }}>
-                Tell us anything — your story, your experience, your hopes for IngrediSure
+                Tell us anything — your story, your experience, your hopes for this platform
               </p>
               <textarea value={suggestion} onChange={e => setSuggestion(e.target.value)}
                 placeholder="Share your thoughts, your health journey, or any ideas you have for making IngrediSure better for everyone..."
