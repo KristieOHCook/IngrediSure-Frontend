@@ -23,12 +23,12 @@ export default function SMSReminder({ compact = false }) {
       <span
         onClick={shareToWhatsApp}
         style={{ padding: '6px 14px', background: 'rgba(37,211,102,0.15)', border: '1px solid rgba(37,211,102,0.4)', borderRadius: '2px', color: '#25d366', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '11px', letterSpacing: '1px' }}>
-        📱 SHARE VIA WHATSAPP
+        SHARE VIA WHATSAPP
       </span>
       <span
         onClick={shareViaText}
         style={{ padding: '6px 14px', background: 'rgba(116,185,255,0.15)', border: '1px solid rgba(116,185,255,0.4)', borderRadius: '2px', color: '#74b9ff', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '11px', letterSpacing: '1px' }}>
-        💬 SHARE VIA TEXT
+        SHARE VIA TEXT
       </span>
     </div>
   );

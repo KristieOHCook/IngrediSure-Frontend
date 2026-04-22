@@ -298,7 +298,7 @@ export default function AccessibilityWidget() {
               transition: 'all 0.2s',
             }}
           >
-            <span style={{ fontSize: '13px' }}>{isReading ? '🔇' : '🔊'}</span>
+            <span style={{ fontSize: '13px' }}>{isReading ? '⏹' : '▶'}</span>
             <span>{isReading ? 'Stop' : 'Read'}</span>
           </button>
         )}
@@ -346,11 +346,11 @@ export default function AccessibilityWidget() {
 
           {/* Disclaimer */}
           <div style={{ fontSize: '9px', color: 'rgba(255,200,100,0.7)', lineHeight: '1.6', padding: '8px', background: 'rgba(255,200,100,0.06)', borderRadius: '4px', fontStyle: 'italic' }}>
-            ⚕️ {t.notMedicalAdvice} {t.consultDoctor}
+            {t.notMedicalAdvice} {t.consultDoctor}
           </div>
 
           {/* Read Aloud */}
-          {secLabel('🔊', t.readAloud.toUpperCase())}
+          {secLabel('', t.readAloud.toUpperCase())}
           <button onClick={readPage}
             style={{
               width: '100%', padding: '10px',
@@ -361,18 +361,18 @@ export default function AccessibilityWidget() {
               cursor: 'pointer', fontFamily: 'Georgia, serif',
               fontSize: '12px', letterSpacing: '1px',
             }}>
-            {isReading ? `🔇 ${t.stopReading}` : `🔊 Read This Page Aloud`}
+            {isReading ? t.stopReading : 'Read This Page Aloud'}
           </button>
 
           {/* Simple Mode */}
-          {secLabel('📱', t.simpleMode.toUpperCase())}
+          {secLabel('', t.simpleMode.toUpperCase())}
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={() => setSimpleMode(false)} style={{ ...optBtn(!simpleMode), flex: 1 }}>Standard</button>
             <button onClick={() => setSimpleMode(true)} style={{ ...optBtn(simpleMode), flex: 1 }}>Simple</button>
           </div>
 
           {/* Font Size */}
-          {secLabel('🔤', t.fontSize.toUpperCase())}
+          {secLabel('', t.fontSize.toUpperCase())}
           <div style={{ display: 'flex', gap: '8px' }}>
             {[
               { key: 'normal', label: 'A', desc: 'Normal' },
@@ -395,7 +395,7 @@ export default function AccessibilityWidget() {
           </div>
 
           {/* Language */}
-          {secLabel('🌐', t.language.toUpperCase())}
+          {secLabel('', t.language.toUpperCase())}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
             {LANGUAGES.map(lang => (
               <button key={lang.code} onClick={() => setLanguage(lang.code)}
@@ -406,14 +406,14 @@ export default function AccessibilityWidget() {
           </div>
 
           {/* ASL */}
-          {secLabel('👋', 'ASL / SIGN LANGUAGE')}
+          {secLabel('', 'ASL / SIGN LANGUAGE')}
           <button onClick={() => window.open('https://www.youtube.com/results?search_query=ASL+food+health+sign+language+guide', '_blank')}
             style={{ width: '100%', padding: '8px', background: 'rgba(116,185,255,0.1)', border: '1px solid rgba(116,185,255,0.3)', borderRadius: '4px', color: '#74b9ff', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '11px', letterSpacing: '1px', marginBottom: '6px' }}>
-            👋 ASL Food & Health Video Guides ↗
+            ASL Food & Health Video Guides ↗
           </button>
           <button onClick={() => window.open('https://www.nad.org', '_blank')}
             style={{ width: '100%', padding: '8px', background: 'rgba(116,185,255,0.06)', border: '1px solid rgba(116,185,255,0.2)', borderRadius: '4px', color: '#74b9ff', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '11px', letterSpacing: '1px' }}>
-            🤝 National Association of the Deaf ↗
+            National Association of the Deaf ↗
           </button>
 
           {/* Reset */}

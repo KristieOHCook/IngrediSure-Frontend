@@ -155,12 +155,6 @@ export default function AdminDashboard() {
         <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' }}>
           {['overview', 'users', 'engagement', 'feedback', 'system', 'analytics'].map(tab => (
             <button key={tab} style={tabStyle(activeTab === tab)} onClick={() => setActiveTab(tab)}>
-              {tab === 'overview' && '📊 '}
-              {tab === 'users' && '👥 '}
-              {tab === 'engagement' && '📈 '}
-              {tab === 'feedback' && '💬 '}
-              {tab === 'system' && '⚙️ '}
-              {tab === 'analytics' && '📊 '}
               {tab.toUpperCase()}
             </button>
           ))}
@@ -327,12 +321,12 @@ export default function AdminDashboard() {
                   FEATURE USAGE
                 </div>
                 {[
-                  { label: 'Safety Scans', value: analytics.totalSavedItems, color: '#e8c49a', icon: '🔍' },
-                  { label: 'Grocery Lists', value: analytics.totalGroceryLists, color: '#7dd97f', icon: '🛒' },
-                  { label: 'Nutrition Logs', value: analytics.totalNutritionLogs, color: '#55efc4', icon: '📊' },
-                  { label: 'Medications Added', value: analytics.totalMedications, color: '#fd79a8', icon: '💊' },
-                  { label: 'Family Members', value: analytics.totalFamilyMembers, color: '#fdcb6e', icon: '👥' },
-                  { label: 'Feedback Submitted', value: analytics.totalFeedback, color: '#a29bfe', icon: '💬' },
+                  { label: 'Safety Scans', value: analytics.totalSavedItems, color: '#e8c49a', icon: '—' },
+                  { label: 'Grocery Lists', value: analytics.totalGroceryLists, color: '#7dd97f', icon: '—' },
+                  { label: 'Nutrition Logs', value: analytics.totalNutritionLogs, color: '#55efc4', icon: '—' },
+                  { label: 'Medications Added', value: analytics.totalMedications, color: '#fd79a8', icon: '—' },
+                  { label: 'Family Members', value: analytics.totalFamilyMembers, color: '#fdcb6e', icon: '—' },
+                  { label: 'Feedback Submitted', value: analytics.totalFeedback, color: '#a29bfe', icon: '—' },
                 ].map(item => (
                   <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
                     <span style={{ fontSize: '16px', width: '24px', flexShrink: 0 }}>{item.icon}</span>
@@ -595,15 +589,15 @@ export default function AdminDashboard() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <button onClick={() => setActiveTab('users')}
                     style={{ padding: '12px', background: 'rgba(116,185,255,0.1)', border: '1px solid rgba(116,185,255,0.3)', borderRadius: '4px', color: '#74b9ff', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px', textAlign: 'left' }}>
-                    👥 MANAGE USERS
+                    MANAGE USERS
                   </button>
                   <button onClick={() => setActiveTab('feedback')}
                     style={{ padding: '12px', background: 'rgba(162,155,254,0.1)', border: '1px solid rgba(162,155,254,0.3)', borderRadius: '4px', color: '#a29bfe', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px', textAlign: 'left' }}>
-                    💬 REVIEW FEEDBACK
+                    REVIEW FEEDBACK
                   </button>
                   <button onClick={() => setActiveTab('engagement')}
                     style={{ padding: '12px', background: 'rgba(232,196,154,0.1)', border: '1px solid rgba(232,196,154,0.3)', borderRadius: '4px', color: '#e8c49a', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px', textAlign: 'left' }}>
-                    📈 VIEW ENGAGEMENT
+                    VIEW ENGAGEMENT
                   </button>
                   <button onClick={() => loadData(user)}
                     style={{ padding: '12px', background: 'rgba(93,187,99,0.1)', border: '1px solid rgba(93,187,99,0.3)', borderRadius: '4px', color: '#7dd97f', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px', textAlign: 'left' }}>
@@ -693,7 +687,7 @@ export default function AdminDashboard() {
               {/* Note */}
               <div style={{ ...sectionStyle, background: 'rgba(232,196,154,0.06)', borderLeft: '3px solid rgba(232,196,154,0.5)', padding: '14px 20px', marginBottom: '24px' }}>
                 <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '12px', fontStyle: 'italic', margin: 0 }}>
-                  📊 Analytics data combines live platform data with modeled estimates. Live tracking integration available in future release.
+                  Analytics data combines live platform data with modeled estimates. Live tracking integration available in future release.
                 </p>
               </div>
 

@@ -420,11 +420,11 @@ export default function MealPlanner() {
           <>
             {/* Calendar export instructions */}
             <div style={{ padding: '14px 20px', background: 'rgba(116,185,255,0.1)', border: '1px solid rgba(116,185,255,0.25)', borderRadius: '4px', marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-              <span style={{ fontSize: '18px', flexShrink: 0 }}>📅</span>
+              <span style={{ fontSize: '18px', flexShrink: 0 }}></span>
               <div>
                 <div style={{ fontSize: '11px', color: '#74b9ff', letterSpacing: '2px', marginBottom: '4px' }}>SAVE TO YOUR CALENDAR</div>
                 <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '12px', margin: 0, lineHeight: '1.7', fontStyle: 'italic' }}>
-                  Click <strong style={{ color: '#74b9ff' }}>EXPORT TO CALENDAR</strong> to download your full week as a .ics file — works with Google Calendar, Apple Calendar, Outlook, Yahoo Mail and all major calendar apps. Or click <strong style={{ color: '#74b9ff' }}>📅 CAL</strong> on any meal to add it directly to Google Calendar.
+                  Click <strong style={{ color: '#74b9ff' }}>EXPORT TO CALENDAR</strong> to download your full week as a .ics file — works with Google Calendar, Apple Calendar, Outlook, Yahoo Mail and all major calendar apps. Or click <strong style={{ color: '#74b9ff' }}>CAL</strong> on any meal to add it directly to Google Calendar.
                 </p>
               </div>
             </div>
@@ -441,13 +441,13 @@ export default function MealPlanner() {
                 onClick={saveFullWeekToGroceryList}
                 style={{ padding: '10px 20px', background: 'rgba(93,187,99,0.15)', border: '1px solid rgba(93,187,99,0.4)', borderRadius: '2px', color: '#7dd97f', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '11px', letterSpacing: '2px' }}
               >
-                🛒 SAVE FULL WEEK GROCERY LIST
+                SAVE FULL WEEK GROCERY LIST
               </button>
               <button
                 onClick={exportToCalendar}
                 style={{ padding: '10px 20px', background: 'rgba(116,185,255,0.15)', border: '1px solid rgba(116,185,255,0.4)', borderRadius: '2px', color: '#74b9ff', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '11px', letterSpacing: '2px' }}
               >
-                📅 EXPORT TO CALENDAR
+                EXPORT TO CALENDAR
               </button>
               <button
                 onClick={() => navigate('/grocery-lists')}
@@ -536,7 +536,7 @@ export default function MealPlanner() {
                           style={{ flex: 1, padding: '6px', background: 'transparent', border: '1px solid rgba(116,185,255,0.25)', borderRadius: '2px', color: 'rgba(116,185,255,0.7)', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '10px', letterSpacing: '1px' }}
                           title="Add to Google Calendar"
                         >
-                          📅 CAL
+                          CAL
                         </button>
                       </div>
                     </div>
@@ -550,7 +550,7 @@ export default function MealPlanner() {
               onClick={() => saveToGroceryList(activeDay)}
               style={{ width: '100%', padding: '14px', background: 'rgba(116,185,255,0.1)', border: '1px solid rgba(116,185,255,0.3)', borderRadius: '4px', color: 'rgba(116,185,255,0.9)', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px', marginTop: '4px' }}
             >
-              🛒 SAVE {activeDay.toUpperCase()} GROCERY LIST
+              SAVE {activeDay.toUpperCase()} GROCERY LIST
             </button>
 
             {/* Weekly overview */}

@@ -41,7 +41,7 @@ export default function Toast({ message, type = 'success', onClose }) {
     delete: {
       bg: 'rgba(255,107,107,0.95)',
       border: 'rgba(255,107,107,1)',
-      icon: '🗑',
+      icon: '×',
     },
   };
 

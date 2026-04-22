@@ -378,7 +378,7 @@ export default function MealPrepServices() {
                   <span style={{ color: '#7dd97f', fontSize: '13px' }}>★ {selected.rating}</span>
                   {selected.affiliateNote && (
                     <span style={{ padding: '3px 10px', background: 'rgba(93,187,99,0.2)', border: '1px solid rgba(93,187,99,0.4)', borderRadius: '2px', color: '#7dd97f', fontSize: '11px', letterSpacing: '0.5px' }}>
-                      🎁 {selected.affiliateNote}
+                      {selected.affiliateNote}
                     </span>
                   )}
                   <span

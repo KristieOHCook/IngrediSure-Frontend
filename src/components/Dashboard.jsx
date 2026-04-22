@@ -138,7 +138,7 @@ const NAV_SECTIONS = [
         iconPath: <><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></>,
       },
       {
-        id: 'feedback', title: '💚 Share Your Experience',
+        id: 'feedback', title: 'Share Your Experience',
         desc: 'Your feedback directly shapes IngrediSure — 3 minutes of your time helps us serve thousands better',
         route: '/feedback', accent: 'rgba(93,187,99,0.9)',
         iconPath: <><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></>,
@@ -272,13 +272,14 @@ export default function Dashboard() {
   const [animating, setAnimating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [quickStats, setQuickStats] = useState({ conditions: null, avoidances: null, savedScans: null });
+  const [quickStats, setQuickStats] = useState({ conditions: null, avoidances: null, savedScans: null, medications: null });
 
   const fetchQuickStats = async (u) => {
     const authHeaders = { Authorization: `Bearer ${u.token}` };
-    const [condRes, avoRes] = await Promise.all([
+    const [condRes, avoRes, medRes] = await Promise.all([
       axios.get(`${API}/conditions`, { headers: authHeaders }).catch(() => ({ data: [] })),
       axios.get(`${API}/avoidances`, { headers: authHeaders }).catch(() => ({ data: [] })),
+      axios.get(`${API}/medications/user/${u.userId}`, { headers: authHeaders }).catch(() => ({ data: [] })),
     ]);
     let savedCount = 0;
     try { savedCount = JSON.parse(localStorage.getItem('savedScans') || '[]').length; } catch {}
@@ -286,6 +287,7 @@ export default function Dashboard() {
       conditions: (condRes.data || []).length,
       avoidances: (avoRes.data || []).length,
       savedScans: savedCount,
+      medications: (medRes.data || []).length,
     });
   };
 
@@ -398,11 +400,13 @@ export default function Dashboard() {
               </p>
               <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '28px', flexWrap: 'wrap' }}>
                 {[
-                  { label: 'Conditions', value: quickStats.conditions, icon: '♥', color: 'rgba(93,187,99,0.85)' },
-                  { label: 'Avoidances', value: quickStats.avoidances, icon: '⚠', color: 'rgba(255,107,53,0.85)' },
-                  { label: 'Saved Scans', value: quickStats.savedScans, icon: '★', color: 'rgba(116,185,255,0.85)' },
+                  { label: 'Conditions', value: quickStats.conditions, icon: '♥', color: 'rgba(93,187,99,0.85)', tab: 'conditions' },
+                  { label: 'Avoidances', value: quickStats.avoidances, icon: '⚠', color: 'rgba(255,107,53,0.85)', tab: 'avoidances' },
+                  { label: 'Saved Scans', value: quickStats.savedScans, icon: '★', color: 'rgba(116,185,255,0.85)', tab: 'saved' },
+                  { label: 'Medications', value: quickStats.medications, icon: '★', color: 'rgba(116,185,255,0.85)', tab: 'medications' },
+                  { label: 'Account', value: null, icon: '—', color: 'rgba(162,155,254,0.85)', tab: 'account' },
                 ].map(stat => (
-                  <div key={stat.label} onClick={() => navigate('/my-profile')}
+                  <div key={stat.label} onClick={() => navigate(`/my-profile?tab=${stat.tab}`)}
                     style={{ cursor: 'pointer', background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: `1px solid ${stat.color}`, borderRadius: '4px', padding: '12px 18px', minWidth: '90px' }}
                   >
                     <div style={{ fontSize: '16px', marginBottom: '4px', color: stat.color }}>{stat.icon}</div>
@@ -600,11 +604,13 @@ export default function Dashboard() {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>
                   {[
-                    { label: 'Conditions', value: quickStats.conditions, icon: '♥', color: 'rgba(93,187,99,0.85)' },
-                    { label: 'Avoidances', value: quickStats.avoidances, icon: '⚠', color: 'rgba(255,107,53,0.85)' },
-                    { label: 'Saved Scans', value: quickStats.savedScans, icon: '★', color: 'rgba(116,185,255,0.85)' },
+                    { label: 'Conditions', value: quickStats.conditions, icon: '♥', color: 'rgba(93,187,99,0.85)', tab: 'conditions' },
+                    { label: 'Avoidances', value: quickStats.avoidances, icon: '⚠', color: 'rgba(255,107,53,0.85)', tab: 'avoidances' },
+                    { label: 'Saved Scans', value: quickStats.savedScans, icon: '★', color: 'rgba(116,185,255,0.85)', tab: 'saved' },
+                    { label: 'Medications', value: quickStats.medications, icon: '★', color: 'rgba(116,185,255,0.85)', tab: 'medications' },
+                    { label: 'Account', value: null, icon: '—', color: 'rgba(162,155,254,0.85)', tab: 'account' },
                   ].map(stat => (
-                    <div key={stat.label} onClick={() => navigate('/my-profile')}
+                    <div key={stat.label} onClick={() => navigate(`/my-profile?tab=${stat.tab}`)}
                       style={{ cursor: 'pointer', background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: `1px solid ${stat.color}`, borderRadius: '4px', padding: '16px 24px', minWidth: '110px', transition: 'all 0.25s' }}
                       onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.16)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.transform = 'none'; }}
@@ -677,7 +683,7 @@ export default function Dashboard() {
 
                     {/* Block 1 — The Story Behind IngrediSure */}
                     <div style={{ background: 'rgba(232,196,154,0.08)', backdropFilter: 'blur(16px)', border: '1px solid rgba(232,196,154,0.2)', borderRadius: '4px', padding: '28px 32px', marginBottom: '16px' }}>
-                      <div style={{ fontSize: '11px', color: '#e8c49a', letterSpacing: '3px', marginBottom: '16px' }}>💚 {t.storyTitle}</div>
+                      <div style={{ fontSize: '11px', color: '#e8c49a', letterSpacing: '3px', marginBottom: '16px' }}>{t.storyTitle}</div>
                       <p style={{ color: '#ffffff', fontSize: '16px', lineHeight: '2', margin: '0 0 16px', fontStyle: 'italic', fontWeight: '300', textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
                         {t.storyQuote}
                       </p>

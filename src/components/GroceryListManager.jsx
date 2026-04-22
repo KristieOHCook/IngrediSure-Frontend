@@ -105,6 +105,10 @@ export default function GroceryListManager() {
 
   const createNewList = async () => {
     if (!newListName.trim()) return;
+    if (lists.some(l => l.listName.toLowerCase() === newListName.trim().toLowerCase())) {
+      showToast('A list with this name already exists', 'error');
+      return;
+    }
     try {
       const res = await axios.post(`${API}/grocery-lists`, {
         listName: newListName.trim(),

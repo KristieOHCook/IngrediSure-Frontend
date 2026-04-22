@@ -93,6 +93,10 @@ export default function FamilyHub() {
 
   const saveMember = async () => {
     if (!memberName.trim() || !relationship) return;
+    if (!editingMember && members.some(m => m.memberName.toLowerCase() === memberName.trim().toLowerCase())) {
+      showToast('A family member with this name already exists', 'error');
+      return;
+    }
     const payload = {
       memberName, relationship,
       age: age ? parseInt(age) : null,
@@ -420,12 +424,12 @@ export default function FamilyHub() {
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                     {[
-                      { label: '🛒 Grocery Scanner', route: '/grocery', desc: 'Search groceries safe for ' + selectedMember.memberName },
-                      { label: '🍽 Restaurant Finder', route: '/restaurant', desc: 'Find safe restaurant options' },
-                      { label: '📷 Barcode Scanner', route: '/barcode', desc: 'Scan products instantly' },
-                      { label: '📋 Recipe Suggestions', route: '/recipes', desc: 'Recipes that work for everyone' },
-                      { label: '📅 Meal Planner', route: '/meal-planner', desc: 'Plan meals for the whole family' },
-                      { label: '🛍 Grocery Lists', route: '/grocery-lists', desc: 'Build a family shopping list' },
+                      { label: 'Grocery Scanner', route: '/grocery', desc: 'Search groceries safe for ' + selectedMember.memberName },
+                      { label: 'Restaurant Finder', route: '/restaurant', desc: 'Find safe restaurant options' },
+                      { label: 'Barcode Scanner', route: '/barcode', desc: 'Scan products instantly' },
+                      { label: 'Recipe Suggestions', route: '/recipes', desc: 'Recipes that work for everyone' },
+                      { label: 'Meal Planner', route: '/meal-planner', desc: 'Plan meals for the whole family' },
+                      { label: 'Grocery Lists', route: '/grocery-lists', desc: 'Build a family shopping list' },
                     ].map(action => (
                       <div key={action.route} onClick={() => navigate(action.route)}
                         style={{ padding: '14px 16px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '4px', cursor: 'pointer', transition: 'all 0.2s' }}

@@ -82,7 +82,7 @@ const MEDICAL_PORTALS = [
     desc: 'Epic-based portal used by most major hospitals and health systems',
     url: 'https://mychart.com',
     color: '#0066cc',
-    icon: '🏥',
+    icon: '',
     systems: 'Used by Cleveland Clinic, Ohio State, Kaiser, Mayo Clinic and thousands more',
   },
   {
@@ -90,7 +90,7 @@ const MEDICAL_PORTALS = [
     desc: 'Allscripts patient portal for accessing medical records and lab results',
     url: 'https://www.followmyhealth.com',
     color: '#00897b',
-    icon: '📋',
+    icon: '',
     systems: 'Used by many independent physician practices and community hospitals',
   },
   {
@@ -98,7 +98,7 @@ const MEDICAL_PORTALS = [
     desc: 'Connect your iPhone Health app to view records, labs and medications',
     url: 'https://www.apple.com/ios/health/',
     color: '#555555',
-    icon: '🍎',
+    icon: '',
     systems: 'Compatible with hundreds of hospitals via Health Records on iPhone',
   },
   {
@@ -106,7 +106,7 @@ const MEDICAL_PORTALS = [
     desc: 'Android health records app — access your medical data on any Android device',
     url: 'https://www.commonhealth.us',
     color: '#34a853',
-    icon: '📱',
+    icon: '',
     systems: 'Android equivalent of Apple Health for medical record access',
   },
   {
@@ -114,7 +114,7 @@ const MEDICAL_PORTALS = [
     desc: 'CMS Medicare patient data access — view claims, medications and conditions',
     url: 'https://www.cms.gov/myhealthdata',
     color: '#1565c0',
-    icon: '🔵',
+    icon: '',
     systems: 'For Medicare and Medicaid patients across the United States',
   },
   {
@@ -122,7 +122,7 @@ const MEDICAL_PORTALS = [
     desc: 'Aggregates health records from multiple providers into one place',
     url: 'https://www.onerecord.com',
     color: '#7b1fa2',
-    icon: '🔗',
+    icon: '',
     systems: 'Connects to thousands of health systems nationwide',
   },
   {
@@ -130,7 +130,7 @@ const MEDICAL_PORTALS = [
     desc: 'Veterans Affairs patient portal for military veterans',
     url: 'https://www.myhealth.va.gov',
     color: '#b71c1c',
-    icon: '🎖',
+    icon: '',
     systems: 'For US military veterans receiving VA healthcare',
   },
   {
@@ -138,7 +138,7 @@ const MEDICAL_PORTALS = [
     desc: 'Patient portal for Cerner-based hospital systems',
     url: 'https://www.cerner.com/patients',
     color: '#e65100',
-    icon: '⚕️',
+    icon: '',
     systems: 'Used by Mercy Health, Ascension, Baptist Health and others',
   },
   {
@@ -146,7 +146,7 @@ const MEDICAL_PORTALS = [
     desc: 'Mass General Brigham patient portal',
     url: 'https://www.patientgateway.org',
     color: '#1a237e',
-    icon: '🏨',
+    icon: '',
     systems: 'Mass General Hospital, Brigham and Women\'s and affiliated providers',
   },
   {
@@ -154,7 +154,7 @@ const MEDICAL_PORTALS = [
     desc: 'University of Chicago Medicine patient portal',
     url: 'https://www.uchicagomedicine.org/mychart',
     color: '#800000',
-    icon: '🎓',
+    icon: '',
     systems: 'University of Chicago Medicine and affiliated practices',
   },
 ];
@@ -352,6 +352,11 @@ export default function NutritionTracker() {
 
   const addMedication = async () => {
     if (!medName.trim()) return;
+    if (medications.some(m => m.medicationName.toLowerCase() === medName.trim().toLowerCase())) {
+      setMessage('This medication has already been added');
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
     try {
       await axios.post(`${API}/medications`, {
         medicationName: medName, dosage: medDosage,
@@ -528,7 +533,7 @@ export default function NutritionTracker() {
             )}
           </button>
           <button style={tabStyle(activeTab === 'records')} onClick={() => setActiveTab('records')}>
-            🏥 MY HEALTH RECORDS
+            MY HEALTH RECORDS
           </button>
         </div>
 
@@ -815,7 +820,7 @@ export default function NutritionTracker() {
             {/* Intro */}
             <div style={{ ...sectionStyle, background: 'rgba(116,185,255,0.08)', border: '1px solid rgba(116,185,255,0.2)', marginBottom: '20px' }}>
               <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                <div style={{ fontSize: '28px', flexShrink: 0 }}>🏥</div>
+                <div style={{ fontSize: '28px', flexShrink: 0 }}></div>
                 <div>
                   <div style={{ fontSize: '11px', color: '#74b9ff', letterSpacing: '2px', marginBottom: '8px' }}>CONNECT YOUR MEDICAL RECORDS</div>
                   <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px', lineHeight: '1.9', margin: '0 0 10px' }}>
@@ -917,17 +922,17 @@ export default function NutritionTracker() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <button onClick={() => setActiveTab('medications')}
                 style={{ padding: '16px', background: 'rgba(232,196,154,0.12)', border: '1px solid rgba(232,196,154,0.3)', borderRadius: '4px', color: '#e8c49a', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px', textAlign: 'center' }}>
-                💊 ADD MEDICATIONS FROM RECORDS
+                ADD MEDICATIONS FROM RECORDS
               </button>
               <button onClick={() => navigate('/profile')}
                 style={{ padding: '16px', background: 'rgba(93,187,99,0.12)', border: '1px solid rgba(93,187,99,0.3)', borderRadius: '4px', color: '#7dd97f', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px', textAlign: 'center' }}>
-                🏥 UPDATE HEALTH PROFILE
+                UPDATE HEALTH PROFILE
               </button>
             </div>
 
             {/* Privacy note */}
             <div style={{ padding: '16px 20px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '4px', marginTop: '16px' }}>
-              <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', letterSpacing: '2px', marginBottom: '6px' }}>🔒 PRIVACY NOTE</div>
+              <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', letterSpacing: '2px', marginBottom: '6px' }}>PRIVACY NOTE</div>
               <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '12px', lineHeight: '1.7', margin: 0, fontStyle: 'italic' }}>
                 IngrediSure does not directly access or store your medical records. All patient portal links open in a separate tab and your login credentials are never shared with IngrediSure. Any notes you save here are stored only on your device. Always consult your healthcare provider before making changes based on this information.
               </p>

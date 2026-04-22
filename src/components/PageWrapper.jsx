@@ -55,7 +55,7 @@ export default function PageWrapper({ children, title, description, readText, sh
           color: '#ffff00',
           lineHeight: '1.6',
         }}>
-          ⚕️ {t.notMedicalAdvice} {t.consultDoctor}
+          {t.notMedicalAdvice} {t.consultDoctor}
         </div>
 
         {/* Content with high contrast styles injected */}

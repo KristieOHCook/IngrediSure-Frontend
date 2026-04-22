@@ -31,7 +31,7 @@ function ForgotPassword() {
 
         {message && (
           <div style={{ color: isError ? 'red' : 'green', marginBottom: '15px', fontWeight: 'bold', fontSize: '13px' }}>
-            {isError ? '⚠️ ' : '✅ '}{message}
+            {message}
           </div>
         )}
 

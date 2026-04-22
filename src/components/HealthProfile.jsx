@@ -59,6 +59,10 @@ export default function HealthProfile() {
   const addCondition = async () => {
     const conditionToAdd = useCustom ? customCondition.trim() : newCondition;
     if (!conditionToAdd) return;
+    if (conditions.some(c => c.conditionName.toLowerCase() === conditionToAdd.toLowerCase())) {
+      setMessage('This condition has already been added');
+      return;
+    }
     try {
       const res = await axios.post(`${API}/conditions`, {
         conditionName: conditionToAdd,
@@ -80,6 +84,10 @@ export default function HealthProfile() {
 
   const addAvoidance = async () => {
     if (!newAvoidance.trim()) return;
+    if (avoidances.some(a => a.ingredientName.toLowerCase() === newAvoidance.trim().toLowerCase())) {
+      setMessage('This ingredient is already in your list');
+      return;
+    }
     try {
       const res = await axios.post(`${API}/avoidances`, {
         ingredientName: newAvoidance.trim(),

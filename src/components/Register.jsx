@@ -210,6 +210,22 @@ export default function Register() {
             />
           </div>
 
+          {/* Confirm Password */}
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', letterSpacing: '2px', marginBottom: '8px' }}>
+              CONFIRM PASSWORD
+            </div>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={e => setConfirmPassword(e.target.value)}
+              onFocus={() => setFocusedField('confirm')}
+              onBlur={() => setFocusedField('')}
+              placeholder="Re-enter your password"
+              style={inputStyle('confirm')}
+            />
+          </div>
+
           {/* Phone number */}
           <div style={{ marginBottom: '16px' }}>
             <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', letterSpacing: '2px', marginBottom: '8px' }}>
@@ -223,22 +239,6 @@ export default function Register() {
               onBlur={() => setFocusedField('')}
               placeholder="e.g. (614) 555-0123"
               style={inputStyle('phone')}
-            />
-          </div>
-
-          {/* Confirm Password */}
-          <div style={{ marginBottom: '20px' }}>
-            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', letterSpacing: '2px', marginBottom: '8px' }}>
-              CONFIRM PASSWORD
-            </div>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={e => setConfirmPassword(e.target.value)}
-              onFocus={() => setFocusedField('confirm')}
-              onBlur={() => setFocusedField('')}
-              placeholder="Re-enter your password"
-              style={inputStyle('confirm')}
             />
           </div>
 

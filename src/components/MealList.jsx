@@ -29,7 +29,7 @@ function MealList() {
                     }}>
                         <h2 style={{ color: '#2d3748' }}>{meal.itemName}</h2>
                         <h4 style={{ color: '#718096' }}>{meal.restaurantName}</h4>
-                        <p style={{ color: '#38a169', fontWeight: 'bold' }}>💡 Tip: {meal.modificationTip}</p>
+                        <p style={{ color: '#38a169', fontWeight: 'bold' }}>Tip: {meal.modificationTip}</p>
                         <div style={{ marginTop: '10px' }}>
                             <label>Sodium: {meal.sodiumLevel}/10</label>
                             <div style={{ width: '100%', background: '#edf2f7', height: '10px', borderRadius: '5px' }}>

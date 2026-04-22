@@ -22,7 +22,7 @@ export default function ReadAloudButton({ text, style }) {
       }}
       aria-label={isReading ? t.stopReading : t.readAloud}
     >
-      {isReading ? `🔇 ${t.stopReading}` : `🔊 ${t.readAloud}`}
+      {isReading ? t.stopReading : t.readAloud}
     </button>
   );
 }

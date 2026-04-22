@@ -308,7 +308,7 @@ export default function RestaurantFinder() {
                 onClick={() => window.open(selected.orderUrl, '_blank')}
                 style={{ padding: '10px 20px', background: 'rgba(93,187,99,0.2)', border: '1px solid rgba(93,187,99,0.5)', borderRadius: '2px', color: '#7dd97f', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '11px', letterSpacing: '2px' }}
               >
-                🛒 ORDER ONLINE
+                ORDER ONLINE
               </span>
               <span
                 onClick={() => window.open(selected.website, '_blank')}
@@ -521,7 +521,7 @@ export default function RestaurantFinder() {
               onClick={() => window.open(selected.orderUrl, '_blank')}
               style={{ display: 'inline-block', padding: '12px 28px', background: 'rgba(93,187,99,0.2)', border: '1px solid rgba(93,187,99,0.5)', borderRadius: '2px', color: '#7dd97f', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px' }}
             >
-              🛒 ORDER FROM {selected.name.toUpperCase()}
+              ORDER FROM {selected.name.toUpperCase()}
             </span>
           </div>
         )}

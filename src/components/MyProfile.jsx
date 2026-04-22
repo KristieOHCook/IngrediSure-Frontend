@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAccessibility } from '../AccessibilityContext';
 import Toast from './Toast';
@@ -23,9 +23,11 @@ const CONDITIONS = [
 
 export default function MyProfile() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { language } = useAccessibility();
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('conditions');
+  const [showPassword, setShowPassword] = useState(false);
   const [conditions, setConditions] = useState([]);
   const [avoidances, setAvoidances] = useState([]);
   const [savedItems, setSavedItems] = useState([]);
@@ -56,6 +58,11 @@ export default function MyProfile() {
     loadData(parsed);
   }, [navigate]);
 
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) setActiveTab(tab);
+  }, [searchParams]);
+
   const headers = (u) => ({ Authorization: `Bearer ${u.token}` });
 
   const loadData = async (u) => {
@@ -79,6 +86,10 @@ export default function MyProfile() {
   const addCondition = async () => {
     const conditionToAdd = useCustom ? customCondition.trim() : newCondition;
     if (!conditionToAdd) return;
+    if (conditions.some(c => c.conditionName.toLowerCase() === conditionToAdd.toLowerCase())) {
+      showToast('This condition has already been added', 'error');
+      return;
+    }
     try {
       const res = await axios.post(`${API}/conditions`, {
         conditionName: conditionToAdd,
@@ -101,6 +112,10 @@ export default function MyProfile() {
 
   const addAvoidance = async () => {
     if (!newAvoidance.trim()) return;
+    if (avoidances.some(a => a.ingredientName.toLowerCase() === newAvoidance.trim().toLowerCase())) {
+      showToast('This ingredient is already in your list', 'error');
+      return;
+    }
     try {
       const res = await axios.post(`${API}/avoidances`, {
         ingredientName: newAvoidance.trim(),
@@ -150,6 +165,7 @@ export default function MyProfile() {
   };
 
   const getFoodInteractions = (medName) => {
+    if (!medName) return null;
     const key = Object.keys(FOOD_DRUG_INTERACTIONS).find(k =>
       medName.toLowerCase().includes(k.toLowerCase()) ||
       k.toLowerCase().includes(medName.toLowerCase())
@@ -158,6 +174,7 @@ export default function MyProfile() {
   };
 
   const checkAvoidanceConflicts = (medName) => {
+    if (!medName) return [];
     const interaction = getFoodInteractions(medName);
     if (!interaction) return [];
     return avoidances.filter(a =>
@@ -170,6 +187,10 @@ export default function MyProfile() {
 
   const addMedication = async () => {
     if (!newMedName.trim()) return;
+    if (medications.some(m => m.medicationName.toLowerCase() === newMedName.trim().toLowerCase())) {
+      showToast('This medication has already been added', 'error');
+      return;
+    }
     try {
       const res = await axios.post(`${API}/medications`, {
         userId: user.userId,
@@ -269,10 +290,10 @@ export default function MyProfile() {
         {/* Stats Bar */}
         <div style={{ display: 'flex', gap: '16px', marginTop: '24px', flexWrap: 'wrap' }}>
           {[
-            { label: 'CONDITIONS', value: conditions.length, icon: '🏥' },
-            { label: 'AVOIDANCES', value: avoidances.length, icon: '🚫' },
-            { label: 'MEDICATIONS', value: medications.length, icon: '💊' },
-            { label: 'SAVED SCANS', value: savedItems.length, icon: '📋' },
+            { label: 'CONDITIONS', value: conditions.length, icon: '' },
+            { label: 'AVOIDANCES', value: avoidances.length, icon: '' },
+            { label: 'MEDICATIONS', value: medications.length, icon: '' },
+            { label: 'SAVED SCANS', value: savedItems.length, icon: '' },
           ].map(stat => (
             <div key={stat.label} style={{
               ...glass, flex: 1, minWidth: '120px', textAlign: 'center', padding: '16px',
@@ -289,11 +310,11 @@ export default function MyProfile() {
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         <div style={{ display: 'flex', gap: '4px', marginBottom: '24px', flexWrap: 'wrap' }}>
           {[
-            { key: 'conditions', label: '🏥 Health Conditions' },
-            { key: 'avoidances', label: '🚫 Avoidances & Restrictions' },
-            { key: 'medications', label: '💊 Medications' },
-            { key: 'saved', label: '📋 Saved Scans' },
-            { key: 'account', label: '⚙️ Account' },
+            { key: 'conditions', label: 'Health Conditions' },
+            { key: 'avoidances', label: 'Avoidances & Restrictions' },
+            { key: 'medications', label: 'Medications' },
+            { key: 'saved', label: 'Saved Scans' },
+            { key: 'account', label: 'Account' },
           ].map(tab => (
             <button
               key={tab.key}
@@ -380,7 +401,7 @@ export default function MyProfile() {
               These ingredients are flagged across ALL features — grocery scanning, restaurant finder, recipes and meal planning
             </p>
             <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
-              {['🛒 Grocery Scanner', '🍽 Restaurant Finder', '🍳 Recipes', '📅 Meal Planner'].map(f => (
+              {['Grocery Scanner', 'Restaurant Finder', 'Recipes', 'Meal Planner'].map(f => (
                 <span key={f} style={{ padding: '4px 12px', background: 'rgba(232,196,154,0.1)', border: '1px solid rgba(232,196,154,0.2)', borderRadius: '20px', color: 'rgba(232,196,154,0.7)', fontSize: '11px' }}>{f}</span>
               ))}
             </div>
@@ -392,7 +413,7 @@ export default function MyProfile() {
               )}
               {avoidances.map(a => (
                 <div key={a.id} style={{ ...chipStyle, borderColor: 'rgba(255,107,53,0.4)', color: '#ff9966' }}>
-                  🚫 {a.ingredientName}
+                  {a.ingredientName}
                   <button onClick={() => removeAvoidance(a.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '16px', padding: 0, lineHeight: 1 }}>×</button>
                 </div>
               ))}
@@ -416,10 +437,10 @@ export default function MyProfile() {
               <p style={{ margin: '0 0 12px', fontSize: '11px', color: 'rgba(255,255,255,0.4)', letterSpacing: '2px' }}>QUICK ACCESS</p>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {[
-                  { label: '🔍 Grocery Scanner', path: '/grocery' },
-                  { label: '🍽 Restaurant Finder', path: '/restaurant' },
-                  { label: '🍳 Recipes', path: '/recipes' },
-                  { label: '📅 Meal Planner', path: '/meal-planner' },
+                  { label: 'Grocery Scanner', path: '/grocery' },
+                  { label: 'Restaurant Finder', path: '/restaurant' },
+                  { label: 'Recipes', path: '/recipes' },
+                  { label: 'Meal Planner', path: '/meal-planner' },
                 ].map(link => (
                   <button key={link.path} onClick={() => navigate(link.path)} style={btnStyle()}>
                     {link.label}
@@ -480,8 +501,8 @@ export default function MyProfile() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {medications.map(med => {
-                const interaction = getFoodInteractions(med.medicationName);
-                const conflicts = checkAvoidanceConflicts(med.medicationName);
+                const interaction = getFoodInteractions(med?.medicationName);
+                const conflicts = checkAvoidanceConflicts(med?.medicationName);
                 return (
                   <div key={med.id} style={{
                     padding: '20px',
@@ -493,22 +514,22 @@ export default function MyProfile() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                       <div>
                         <div style={{ fontSize: '16px', color: '#ffffff', fontWeight: '600', marginBottom: '4px' }}>
-                          💊 {med.medicationName}
+                          {med.medicationName}
                         </div>
                         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                           {med.dosage && (
                             <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
-                              📏 {med.dosage}
+                              {med.dosage}
                             </span>
                           )}
                           {med.frequency && (
                             <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
-                              🕐 {med.frequency}
+                              {med.frequency}
                             </span>
                           )}
                         </div>
                       </div>
-                      <button onClick={() => removeMedication(med.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,107,107,0.6)', cursor: 'pointer', fontSize: '18px' }}>🗑</button>
+                      <button onClick={() => removeMedication(med.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,107,107,0.6)', cursor: 'pointer', fontSize: '18px' }}>×</button>
                     </div>
 
                     {/* Conflicts with current avoidances */}
@@ -523,7 +544,7 @@ export default function MyProfile() {
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                           {conflicts.map((c, i) => (
                             <span key={i} style={{ padding: '3px 10px', background: 'rgba(255,107,107,0.25)', border: '1px solid rgba(255,107,107,0.4)', borderRadius: '12px', color: '#ff9999', fontSize: '11px' }}>
-                              🚫 {c.ingredientName}
+                              {c.ingredientName}
                             </span>
                           ))}
                         </div>
@@ -576,11 +597,11 @@ export default function MyProfile() {
                     <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', letterSpacing: '1px' }}>MEDICATIONS</div>
                   </div>
                   <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '24px', color: '#f0c040' }}>{medications.filter(m => getFoodInteractions(m.medicationName)).length}</div>
+                    <div style={{ fontSize: '24px', color: '#f0c040' }}>{medications.filter(m => getFoodInteractions(m?.medicationName)).length}</div>
                     <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', letterSpacing: '1px' }}>WITH FOOD INTERACTIONS</div>
                   </div>
                   <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '24px', color: '#ff6b6b' }}>{medications.filter(m => checkAvoidanceConflicts(m.medicationName).length > 0).length}</div>
+                    <div style={{ fontSize: '24px', color: '#ff6b6b' }}>{medications.filter(m => checkAvoidanceConflicts(m?.medicationName).length > 0).length}</div>
                     <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', letterSpacing: '1px' }}>CONFLICT WITH AVOIDANCES</div>
                   </div>
                 </div>
@@ -687,6 +708,30 @@ export default function MyProfile() {
                     {editingEmail ? 'CANCEL' : 'EDIT'}
                   </button>
                 </div>
+              </div>
+
+              {/* Password */}
+              <div>
+                <label style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', letterSpacing: '2px', display: 'block', marginBottom: '8px' }}>PASSWORD</label>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={(() => { try { return JSON.parse(localStorage.getItem('user'))?.password || ''; } catch { return ''; } })() || '••••••••'}
+                    readOnly
+                    disabled
+                    style={{ ...inputStyle, flex: 1, opacity: 0.65, cursor: 'default', letterSpacing: showPassword ? '0.5px' : '4px' }}
+                  />
+                  <button
+                    onClick={() => setShowPassword(p => !p)}
+                    style={{ ...btnStyle(), padding: '10px 14px', fontSize: '18px', letterSpacing: 0, lineHeight: 1, flexShrink: 0 }}
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? '🙈' : '👁'}
+                  </button>
+                </div>
+                <p style={{ margin: '8px 0 0', fontSize: '11px', color: 'rgba(255,255,255,0.3)', fontStyle: 'italic', lineHeight: '1.6' }}>
+                  For security purposes your password is encrypted and cannot be displayed in plain text. Contact support to reset your password.
+                </p>
               </div>
 
               {/* Role */}

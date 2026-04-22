@@ -8,7 +8,7 @@ const BG = 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=1200&
 const DISCLAIMERS = [
   {
     title: 'NOT MEDICAL ADVICE',
-    icon: '⚕️',
+    icon: '',
     color: '#ff6b6b',
     content: `IngrediSure is a wellness information and ingredient awareness tool. It is NOT a medical device, NOT a clinical decision support tool, and NOT a substitute for professional medical advice, diagnosis, or treatment. The information provided by IngrediSure should never be used as the sole basis for any health or dietary decision.
 
@@ -16,7 +16,7 @@ Always seek the advice of your qualified healthcare provider, registered dietiti
   },
   {
     title: 'INGREDIENT & SAFETY INFORMATION',
-    icon: '🔍',
+    icon: '',
     color: '#f0c040',
     content: `IngrediSure's safety verdicts (Safe, Caution, Unsafe) are generated based on general ingredient analysis algorithms and the health information you voluntarily provide in your personal health profile. These verdicts:
 
@@ -31,7 +31,7 @@ IngrediSure makes no warranty, express or implied, about the accuracy, completen
   },
   {
     title: 'FOOD-DRUG INTERACTION INFORMATION',
-    icon: '💊',
+    icon: '',
     color: '#fd79a8',
     content: `The food-drug interaction information provided by IngrediSure is for general educational awareness only. It is based on publicly available general information and is NOT:
 
@@ -44,7 +44,7 @@ Always consult your pharmacist or prescribing physician before making any dietar
   },
   {
     title: 'HEALTH PROFILE DATA',
-    icon: '🔒',
+    icon: '',
     color: '#74b9ff',
     content: `The health profile information you enter into IngrediSure (including medical conditions, medications, and dietary restrictions) is self-reported by you. IngrediSure:
 
@@ -57,7 +57,7 @@ The accuracy of IngrediSure's safety verdicts depends entirely on the accuracy a
   },
   {
     title: 'ALLERGEN WARNING',
-    icon: '⚠️',
+    icon: '',
     color: '#ff6b6b',
     content: `IngrediSure is NOT intended to be used as a primary safety tool for individuals with severe food allergies, anaphylaxis risk, or life-threatening dietary conditions. Users with severe allergies must:
 
@@ -70,7 +70,7 @@ For severe allergies, IngrediSure should be used as a supplementary awareness to
   },
   {
     title: 'NO DOCTOR-PATIENT RELATIONSHIP',
-    icon: '👨‍⚕️',
+    icon: '',
     color: '#a29bfe',
     content: `Use of IngrediSure does not create a doctor-patient, dietitian-client, or any other healthcare provider relationship between you and IngrediSure, its creators, or its operators. No healthcare professional is involved in generating the safety information or verdicts provided by IngrediSure.
 
@@ -78,7 +78,7 @@ IngrediSure is a technology tool that applies general ingredient-condition match
   },
   {
     title: 'LIMITATION OF LIABILITY',
-    icon: '⚖️',
+    icon: '',
     color: '#e8c49a',
     content: `To the fullest extent permitted by applicable law, IngrediSure, its creators, developers, and operators shall not be liable for any direct, indirect, incidental, special, consequential, or punitive damages arising from:
 
@@ -92,7 +92,7 @@ By using IngrediSure, you acknowledge and agree that you assume full responsibil
   },
   {
     title: 'ACCESSIBILITY & LANGUAGE',
-    icon: '♿',
+    icon: '',
     color: '#55efc4',
     content: `IngrediSure provides multi-language support and accessibility features as a courtesy to users. Please be aware that:
 
@@ -105,7 +105,7 @@ IngrediSure is committed to improving accessibility and language accuracy over t
   },
   {
     title: 'CHILDREN & FAMILY USE',
-    icon: '👨‍👩‍👧',
+    icon: '',
     color: '#fdcb6e',
     content: `IngrediSure's Family Hub feature allows users to create health profiles for family members of all ages. Please note:
 
@@ -118,7 +118,7 @@ Parents and guardians are responsible for verifying the appropriateness of any d
   },
   {
     title: 'EMERGENCY SITUATIONS',
-    icon: '🚨',
+    icon: '',
     color: '#ff2222',
     content: `IngrediSure is NOT an emergency response tool. If you or someone else is experiencing a medical emergency, including a severe allergic reaction, anaphylaxis, or any life-threatening condition:
 
@@ -168,7 +168,7 @@ export default function LegalDisclaimers() {
         {/* Intro */}
         <div style={{ padding: '20px 24px', background: 'rgba(255,107,107,0.12)', border: '2px solid rgba(255,107,107,0.4)', borderRadius: '4px', marginBottom: '24px' }}>
           <div style={{ fontSize: '12px', color: '#ff9999', letterSpacing: '2px', marginBottom: '8px', fontWeight: '700' }}>
-            ⚕️ IMPORTANT — PLEASE READ
+            IMPORTANT — PLEASE READ
           </div>
           <p style={{ color: '#ffffff', fontSize: bodySize, lineHeight: '1.9', margin: 0 }}>
             By using IngrediSure you acknowledge that this application is a wellness information tool only and is NOT a medical device or substitute for professional medical advice. The following disclaimers govern your use of IngrediSure and protect both you and us. Please read them carefully.

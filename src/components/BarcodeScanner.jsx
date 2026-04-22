@@ -198,7 +198,7 @@ export default function BarcodeScanner() {
               onClick={startScanner}
               style={{ width: '100%', padding: '18px', background: 'rgba(255,107,53,0.2)', border: '1px solid rgba(255,107,53,0.5)', borderRadius: '4px', color: 'rgba(255,150,100,1)', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '13px', letterSpacing: '2px', marginBottom: '16px' }}
             >
-              📷 START CAMERA SCAN
+              START CAMERA SCAN
             </button>
           ) : (
             <button

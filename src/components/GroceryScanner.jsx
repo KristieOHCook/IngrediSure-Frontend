@@ -329,9 +329,9 @@ export default function GroceryScanner() {
               <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
                 <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', letterSpacing: '2px', width: '100%', marginBottom: '4px' }}>SHARE THIS RESULT</div>
                 {[
-                  { label: '📘 Facebook', color: '#1877f2', url: `https://www.facebook.com/sharer/sharer.php?u=https://ingredisure.com&quote=I just checked ${selected?.product_name || 'a product'} on IngrediSure — ${verdict.safetyVerdict} for my health profile! Check your ingredients at ingredisure.com` },
-                  { label: '🐦 Twitter', color: '#1da1f2', url: `https://twitter.com/intent/tweet?text=Just checked ${selected?.product_name || 'a product'} on IngrediSure — ${verdict.safetyVerdict}! Know exactly what's safe for YOUR health conditions. Try it free at ingredisure.com %23IngrediSure %23HealthyEating` },
-                  { label: '📸 Instagram', color: '#e1306c', action: 'copy' },
+                  { label: 'Facebook', color: '#1877f2', url: `https://www.facebook.com/sharer/sharer.php?u=https://ingredisure.com&quote=I just checked ${selected?.product_name || 'a product'} on IngrediSure — ${verdict.safetyVerdict} for my health profile! Check your ingredients at ingredisure.com` },
+                  { label: 'Twitter', color: '#1da1f2', url: `https://twitter.com/intent/tweet?text=Just checked ${selected?.product_name || 'a product'} on IngrediSure — ${verdict.safetyVerdict}! Know exactly what's safe for YOUR health conditions. Try it free at ingredisure.com %23IngrediSure %23HealthyEating` },
+                  { label: 'Instagram', color: '#e1306c', action: 'copy' },
                 ].map(btn => (
                   <span key={btn.label}
                     onClick={() => {
