@@ -29,7 +29,12 @@ export default function HealthProfile() {
     dailyCarbGoal: '', dietaryRestrictions: '', dietaryGoal: '',
   });
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('success');
   const [loading, setLoading] = useState(true);
+
+  const setWarning = (text) => { setMessage(text); setMessageType('warning'); };
+  const setSuccess = (text) => { setMessage(text); setMessageType('success'); };
+  const setError = (text) => { setMessage(text); setMessageType('error'); };
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
@@ -59,8 +64,8 @@ export default function HealthProfile() {
   const addCondition = async () => {
     const conditionToAdd = useCustom ? customCondition.trim() : newCondition;
     if (!conditionToAdd) return;
-    if (conditions.some(c => c.conditionName.toLowerCase() === conditionToAdd.toLowerCase())) {
-      setMessage('This condition has already been added');
+    if (conditions.some(c => c.conditionName.toLowerCase().trim() === conditionToAdd.toLowerCase().trim())) {
+      setWarning('This condition has already been added to your profile.');
       return;
     }
     try {
@@ -71,21 +76,21 @@ export default function HealthProfile() {
       setConditions(prev => [...prev, res.data]);
       setNewCondition('');
       setCustomCondition('');
-      setMessage('Condition added!');
-    } catch (err) { setMessage('Error adding condition.'); }
+      setSuccess('Condition added!');
+    } catch (err) { setError('Error adding condition.'); }
   };
 
   const removeCondition = async (id) => {
     try {
       await axios.delete(`${API}/conditions/${id}`, { headers: headers(user) });
       setConditions(prev => prev.filter(c => c.id !== id));
-    } catch (err) { setMessage('Error removing condition.'); }
+    } catch (err) { setError('Error removing condition.'); }
   };
 
   const addAvoidance = async () => {
     if (!newAvoidance.trim()) return;
-    if (avoidances.some(a => a.ingredientName.toLowerCase() === newAvoidance.trim().toLowerCase())) {
-      setMessage('This ingredient is already in your list');
+    if (avoidances.some(a => a.ingredientName.toLowerCase().trim() === newAvoidance.toLowerCase().trim())) {
+      setWarning('This ingredient is already in your avoidance list.');
       return;
     }
     try {
@@ -95,15 +100,15 @@ export default function HealthProfile() {
       }, { headers: headers(user) });
       setAvoidances(prev => [...prev, res.data]);
       setNewAvoidance('');
-      setMessage('Ingredient added!');
-    } catch (err) { setMessage('Error adding ingredient.'); }
+      setSuccess('Ingredient added!');
+    } catch (err) { setError('Error adding ingredient.'); }
   };
 
   const removeAvoidance = async (id) => {
     try {
       await axios.delete(`${API}/avoidances/${id}`, { headers: headers(user) });
       setAvoidances(prev => prev.filter(a => a.id !== id));
-    } catch (err) { setMessage('Error removing ingredient.'); }
+    } catch (err) { setError('Error removing ingredient.'); }
   };
 
   const labelStyle = {
@@ -171,12 +176,19 @@ export default function HealthProfile() {
           </button>
         </div>
 
-        {message && (
-          <div style={{ background: 'rgba(93,187,99,0.2)', border: '1px solid rgba(93,187,99,0.4)', borderRadius: '4px', padding: '12px 20px', marginBottom: '20px', color: '#7dd97f', fontSize: '13px', letterSpacing: '1px' }}>
-            {message}
-            <button onClick={() => setMessage('')} style={{ float: 'right', background: 'none', border: 'none', color: '#7dd97f', cursor: 'pointer', fontSize: '16px' }}>×</button>
-          </div>
-        )}
+        {message && (() => {
+          const isWarning = messageType === 'warning';
+          const isError = messageType === 'error';
+          const bg = isWarning ? 'rgba(240,192,64,0.15)' : isError ? 'rgba(255,107,107,0.15)' : 'rgba(93,187,99,0.15)';
+          const border = isWarning ? 'rgba(240,192,64,0.5)' : isError ? 'rgba(255,107,107,0.5)' : 'rgba(93,187,99,0.4)';
+          const color = isWarning ? 'rgba(240,192,64,0.9)' : isError ? 'rgba(255,107,107,0.9)' : '#7dd97f';
+          return (
+            <div style={{ background: bg, border: `1px solid ${border}`, borderRadius: '4px', padding: '12px 20px', marginBottom: '20px', marginTop: '8px', color, fontSize: '13px', letterSpacing: '1px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>{isWarning && <strong>⚠ WARNING: </strong>}{message}</span>
+              <button onClick={() => setMessage('')} style={{ background: 'none', border: 'none', color, cursor: 'pointer', fontSize: '16px', marginLeft: '12px', flexShrink: 0 }}>×</button>
+            </div>
+          );
+        })()}
 
         {/* Medical Conditions */}
         <div style={sectionStyle}>

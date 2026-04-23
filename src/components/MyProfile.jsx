@@ -86,8 +86,8 @@ export default function MyProfile() {
   const addCondition = async () => {
     const conditionToAdd = useCustom ? customCondition.trim() : newCondition;
     if (!conditionToAdd) return;
-    if (conditions.some(c => c.conditionName.toLowerCase() === conditionToAdd.toLowerCase())) {
-      showToast('This condition has already been added', 'error');
+    if (conditions.some(c => c.conditionName.toLowerCase().trim() === conditionToAdd.toLowerCase().trim())) {
+      showToast('This condition has already been added to your profile.', 'warning');
       return;
     }
     try {
@@ -112,8 +112,8 @@ export default function MyProfile() {
 
   const addAvoidance = async () => {
     if (!newAvoidance.trim()) return;
-    if (avoidances.some(a => a.ingredientName.toLowerCase() === newAvoidance.trim().toLowerCase())) {
-      showToast('This ingredient is already in your list', 'error');
+    if (avoidances.some(a => a.ingredientName.toLowerCase().trim() === newAvoidance.toLowerCase().trim())) {
+      showToast('This ingredient is already in your avoidance list.', 'warning');
       return;
     }
     try {

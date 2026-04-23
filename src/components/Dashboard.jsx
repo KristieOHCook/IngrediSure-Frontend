@@ -627,6 +627,8 @@ export default function Dashboard() {
                 </div>
               </div>
 
+              {/* BOTTOM — removed */}
+
             </div>
           )}
 
