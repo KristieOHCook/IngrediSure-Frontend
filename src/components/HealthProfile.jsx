@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { useAccessibility } from '../AccessibilityContext';
+import { useUser } from '../UserContext';
 import LoadingScreen from './LoadingScreen';
-
-const API = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+import { glassCard, inputStyle as themeInputStyle, btnPrimary, btnSuccess, btnDanger, sectionLabel, sectionLabelGold, COLORS, FONT } from '../styles/theme';
+import useToast from '../hooks/useToast';
+import useAuth from '../hooks/useAuth';
 
 const CONDITIONS = [
   'Diabetes', 'Hypertension', 'Celiac Disease',
@@ -17,9 +18,9 @@ const BG = 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=1200&
 export default function HealthProfile() {
   const navigate = useNavigate();
   const { t } = useAccessibility();
-  const [user, setUser] = useState(null);
-  const [conditions, setConditions] = useState([]);
-  const [avoidances, setAvoidances] = useState([]);
+  const { user, conditions, avoidances, addCondition, removeCondition, addAvoidance, removeAvoidance, loading } = useUser();
+  const { user: authUser } = useAuth();
+  const { toast, showToast, hideToast } = useToast();
   const [newCondition, setNewCondition] = useState('');
   const [customCondition, setCustomCondition] = useState('');
   const [useCustom, setUseCustom] = useState(false);
@@ -30,85 +31,39 @@ export default function HealthProfile() {
   });
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('success');
-  const [loading, setLoading] = useState(true);
 
   const setWarning = (text) => { setMessage(text); setMessageType('warning'); };
   const setSuccess = (text) => { setMessage(text); setMessageType('success'); };
   const setError = (text) => { setMessage(text); setMessageType('error'); };
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (!stored) { navigate('/'); return; }
-    const parsed = JSON.parse(stored);
-    if (!parsed?.token) { navigate('/'); return; }
-    setUser(parsed);
-    loadData(parsed);
-  }, [navigate]);
+    if (!loading && !user) navigate('/');
+  }, [user, loading, navigate]);
 
-  const headers = (u) => ({ Authorization: `Bearer ${u.token}` });
-
-  const loadData = async (u) => {
-    try {
-      const [condRes, avoRes] = await Promise.all([
-        axios.get(`${API}/conditions/user/${u.userId}`, { headers: headers(u) }),
-        axios.get(`${API}/avoidances/user/${u.userId}`, { headers: headers(u) }),
-      ]);
-      setConditions(condRes.data || []);
-      setAvoidances(avoRes.data || []);
-    } catch (err) {
-      console.error('Load error:', err);
-    }
-    setLoading(false);
-  };
-
-  const addCondition = async () => {
+  const handleAddCondition = async () => {
     const conditionToAdd = useCustom ? customCondition.trim() : newCondition;
     if (!conditionToAdd) return;
-    if (conditions.some(c => c.conditionName.toLowerCase().trim() === conditionToAdd.toLowerCase().trim())) {
-      setWarning('This condition has already been added to your profile.');
-      return;
-    }
-    try {
-      const res = await axios.post(`${API}/conditions`, {
-        conditionName: conditionToAdd,
-        userId: user.userId,
-      }, { headers: headers(user) });
-      setConditions(prev => [...prev, res.data]);
-      setNewCondition('');
-      setCustomCondition('');
-      setSuccess('Condition added!');
-    } catch (err) { setError('Error adding condition.'); }
+    const result = await addCondition(conditionToAdd);
+    if (result?.error) { setWarning(result.error); return; }
+    setNewCondition('');
+    setCustomCondition('');
+    setSuccess('Condition added!');
   };
 
-  const removeCondition = async (id) => {
-    try {
-      await axios.delete(`${API}/conditions/${id}`, { headers: headers(user) });
-      setConditions(prev => prev.filter(c => c.id !== id));
-    } catch (err) { setError('Error removing condition.'); }
+  const handleRemoveCondition = async (id) => {
+    await removeCondition(id);
   };
 
-  const addAvoidance = async () => {
+  const handleAddAvoidance = async () => {
     if (!newAvoidance.trim()) return;
-    if (avoidances.some(a => a.ingredientName.toLowerCase().trim() === newAvoidance.toLowerCase().trim())) {
-      setWarning('This ingredient is already in your avoidance list.');
-      return;
-    }
-    try {
-      const res = await axios.post(`${API}/avoidances`, {
-        ingredientName: newAvoidance.trim(),
-        userId: user.userId,
-      }, { headers: headers(user) });
-      setAvoidances(prev => [...prev, res.data]);
-      setNewAvoidance('');
-      setSuccess('Ingredient added!');
-    } catch (err) { setError('Error adding ingredient.'); }
+    const result = await addAvoidance(newAvoidance.trim());
+    if (result?.error) { setWarning(result.error); return; }
+    setNewAvoidance('');
+    setSuccess('Ingredient added!');
   };
 
-  const removeAvoidance = async (id) => {
-    try {
-      await axios.delete(`${API}/avoidances/${id}`, { headers: headers(user) });
-      setAvoidances(prev => prev.filter(a => a.id !== id));
-    } catch (err) { setError('Error removing ingredient.'); }
+  const handleRemoveAvoidance = async (id) => {
+    await removeAvoidance(id);
   };
 
   const labelStyle = {
@@ -207,7 +162,7 @@ export default function HealthProfile() {
             {conditions.map(c => (
               <div key={c.id} style={chipStyle}>
                 {c.conditionName}
-                <button onClick={() => removeCondition(c.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '14px', padding: 0, lineHeight: 1 }}>×</button>
+                <button onClick={() => handleRemoveCondition(c.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '14px', padding: 0, lineHeight: 1 }}>×</button>
               </div>
             ))}
           </div>
@@ -257,12 +212,12 @@ export default function HealthProfile() {
                 placeholder="e.g. Crohn's Disease, PCOS, Gout, Hashimoto's..."
                 value={customCondition}
                 onChange={e => setCustomCondition(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && addCondition()}
+                onKeyDown={e => e.key === 'Enter' && handleAddCondition()}
                 style={{ ...inputStyle, flex: 1 }}
               />
             )}
             <button
-              onClick={addCondition}
+              onClick={handleAddCondition}
               style={{ padding: '12px 28px', background: 'rgba(93,187,99,0.3)', border: '1px solid rgba(93,187,99,0.5)', color: '#7dd97f', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '1px', whiteSpace: 'nowrap' }}
             >
               ADD
@@ -287,7 +242,7 @@ export default function HealthProfile() {
             {avoidances.map(a => (
               <div key={a.id} style={{ ...chipStyle, borderColor: 'rgba(255,107,53,0.4)' }}>
                 {a.ingredientName}
-                <button onClick={() => removeAvoidance(a.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '14px', padding: 0, lineHeight: 1 }}>×</button>
+                <button onClick={() => handleRemoveAvoidance(a.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '14px', padding: 0, lineHeight: 1 }}>×</button>
               </div>
             ))}
           </div>
@@ -299,11 +254,11 @@ export default function HealthProfile() {
               placeholder="e.g. MSG, shellfish, red dye 40..."
               value={newAvoidance}
               onChange={e => setNewAvoidance(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && addAvoidance()}
+              onKeyDown={e => e.key === 'Enter' && handleAddAvoidance()}
               style={{ ...inputStyle, flex: 1 }}
             />
             <button
-              onClick={addAvoidance}
+              onClick={handleAddAvoidance}
               style={{ padding: '12px 28px', background: 'rgba(255,107,53,0.3)', border: '1px solid rgba(255,107,53,0.5)', color: 'rgba(255,150,100,1)', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '1px', whiteSpace: 'nowrap' }}
             >
               ADD

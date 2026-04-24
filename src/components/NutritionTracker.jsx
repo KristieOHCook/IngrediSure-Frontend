@@ -3,7 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Toast from './Toast';
 import { useAccessibility } from '../AccessibilityContext';
+import { useUser } from '../UserContext';
 import LoadingScreen from './LoadingScreen';
+import { glassCard, inputStyle as themeInputStyle, btnPrimary, btnSuccess, btnDanger, sectionLabel, sectionLabelGold, COLORS, FONT } from '../styles/theme';
+import { FOOD_DRUG_INTERACTIONS, getFoodInteractions, checkAvoidanceConflicts } from '../constants/medications';
+import useToast from '../hooks/useToast';
+import useAuth from '../hooks/useAuth';
 
 const API = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 const BG = 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1200&q=90';
@@ -183,19 +188,13 @@ const DRUG_FOOD_INTERACTIONS = {
 export default function NutritionTracker() {
   const navigate = useNavigate();
   const { t } = useAccessibility();
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { user, conditions, avoidances, medications, addMedication, removeMedication, addAvoidance: ctxAddAvoidance, removeAvoidance: ctxRemoveAvoidance, loading } = useUser();
+  const { user: authUser } = useAuth();
   const [activeTab, setActiveTab] = useState('calories');
   const [todayLogs, setTodayLogs] = useState([]);
-  const [medications, setMedications] = useState([]);
   const [message, setMessage] = useState('');
-  const [toast, setToast] = useState(null);
-  const [avoidances, setAvoidances] = useState([]);
+  const { toast, showToast, hideToast } = useToast();
   const [newAvoidance, setNewAvoidance] = useState('');
-
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type });
-  };
   const [showAddMeal, setShowAddMeal] = useState(false);
   const [showAddMed, setShowAddMed] = useState(false);
   const [showGoalEditor, setShowGoalEditor] = useState(false);
@@ -224,31 +223,27 @@ export default function NutritionTracker() {
   const [medDosage, setMedDosage] = useState('');
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (!stored) { navigate('/'); return; }
-    const parsed = JSON.parse(stored);
-    if (!parsed?.token) { navigate('/'); return; }
-    setUser(parsed);
-    loadData(parsed);
-  }, [navigate]);
+    if (!loading && !user) navigate('/');
+  }, [user, loading, navigate]);
 
-  const loadData = async (u) => {
-    const headers = { Authorization: `Bearer ${u.token}` };
+  const loadNutritionData = async () => {
+    if (!user?.token) return;
     try {
-      const [logsRes, medsRes, avoRes] = await Promise.all([
-        axios.get(`${API}/nutrition/today/${u.userId}`, { headers }),
-        axios.get(`${API}/medications/user/${u.userId}`, { headers }),
-        axios.get(`${API}/avoidances/user/${u.userId}`, { headers }),
-      ]);
+      const logsRes = await axios.get(`${API}/nutrition/today/${user.userId}`, {
+        headers: { Authorization: `Bearer ${user.token}` }
+      });
       setTodayLogs(logsRes.data || []);
-      setMedications(medsRes.data || []);
-      setAvoidances(avoRes.data || []);
-      checkInteractions(medsRes.data || [], logsRes.data || []);
     } catch (err) {
-      console.error('Load error:', err);
     }
-    setLoading(false);
   };
+
+  useEffect(() => {
+    if (user?.token) loadNutritionData();
+  }, [user]);
+
+  useEffect(() => {
+    checkInteractions(medications, todayLogs);
+  }, [medications, todayLogs]);
 
   const checkInteractions = (meds, logs) => {
     const found = [];
@@ -337,8 +332,8 @@ export default function NutritionTracker() {
       setShowAddMeal(false);
       showToast('Meal logged! ✓', 'success');
       setTimeout(() => setMessage(''), 3000);
-      loadData(user);
-    } catch (err) { console.error('Log error:', err); }
+      loadNutritionData();
+    } catch (err) { }
   };
 
   const deleteMeal = async (id) => {
@@ -347,62 +342,36 @@ export default function NutritionTracker() {
         headers: { Authorization: `Bearer ${user.token}` }
       });
       setTodayLogs(prev => prev.filter(l => l.id !== id));
-    } catch (err) { console.error(err); }
+    } catch (err) { }
   };
 
-  const addMedication = async () => {
+  const handleAddMedication = async () => {
     if (!medName.trim()) return;
-    if (medications.some(m => m.medicationName.toLowerCase() === medName.trim().toLowerCase())) {
-      setMessage('This medication has already been added');
-      setTimeout(() => setMessage(''), 3000);
-      return;
-    }
-    try {
-      await axios.post(`${API}/medications`, {
-        medicationName: medName, dosage: medDosage,
-      }, { headers: { Authorization: `Bearer ${user.token}` } });
-      setMedName(''); setMedDosage('');
-      setShowAddMed(false);
-      setMessage('Medication added!');
-      setTimeout(() => setMessage(''), 3000);
-      loadData(user);
-    } catch (err) { console.error(err); }
+    const result = await addMedication(medName.trim(), medDosage.trim(), '');
+    if (result?.error) { setMessage(result.error); return; }
+    setMedName(''); setMedDosage('');
+    setShowAddMed(false);
+    setMessage('Medication added successfully.');
+    setTimeout(() => setMessage(''), 3000);
   };
 
-  const removeMedication = async (id) => {
-    try {
-      await axios.delete(`${API}/medications/${id}`, {
-        headers: { Authorization: `Bearer ${user.token}` }
-      });
-      setMedications(prev => prev.filter(m => m.id !== id));
-    } catch (err) { console.error(err); }
+  const handleRemoveMedication = async (id) => {
+    await removeMedication(id);
+    setMessage('Medication removed.');
+    setTimeout(() => setMessage(''), 3000);
   };
 
   const addAvoidance = async () => {
     if (!newAvoidance.trim()) return;
-    try {
-      const res = await axios.post(`${API}/avoidances`, {
-        ingredientName: newAvoidance.trim(),
-        userId: user.userId,
-      }, { headers: { Authorization: `Bearer ${user.token}` } });
-      setAvoidances(prev => [...prev, res.data]);
-      setNewAvoidance('');
-      showToast('Ingredient added!', 'success');
-    } catch (err) {
-      showToast('Error adding ingredient.', 'error');
-    }
+    const result = await ctxAddAvoidance(newAvoidance.trim());
+    if (result?.error) { showToast(result.error, 'error'); return; }
+    setNewAvoidance('');
+    showToast('Ingredient added!', 'success');
   };
 
   const removeAvoidance = async (id) => {
-    try {
-      await axios.delete(`${API}/avoidances/${id}`, {
-        headers: { Authorization: `Bearer ${user.token}` }
-      });
-      setAvoidances(prev => prev.filter(a => a.id !== id));
-      showToast('Ingredient removed.', 'delete');
-    } catch (err) {
-      showToast('Error removing ingredient.', 'error');
-    }
+    await ctxRemoveAvoidance(id);
+    showToast('Ingredient removed.', 'delete');
   };
 
   const totals = todayLogs.reduce((acc, log) => ({
@@ -707,9 +676,23 @@ export default function NutritionTracker() {
                 TODAY'S MEALS — {todayLogs.length} LOGGED
               </div>
               {todayLogs.length === 0 ? (
-                <p style={{ color: 'rgba(255,255,255,0.6)', fontStyle: 'italic', fontSize: '14px' }}>
-                  No meals logged today. Click "+ LOG A MEAL" to get started.
-                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0' }}>
+                  <p style={{ color: 'rgba(255,255,255,0.6)', fontStyle: 'italic', fontSize: '14px', margin: '0 0 4px' }}>
+                    No meals logged today.
+                  </p>
+                  <button
+                    onClick={() => { setActiveTab('tracker'); setShowAddMeal(true); }}
+                    style={{ background: 'rgba(116,185,255,0.15)', border: '1px solid rgba(116,185,255,0.4)', color: 'rgba(116,185,255,0.9)', padding: '10px 24px', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '1.5px', marginTop: '12px' }}
+                  >
+                    + LOG A MEAL
+                  </button>
+                  <button
+                    onClick={() => navigate('/meal-planner')}
+                    style={{ background: 'rgba(232,196,154,0.15)', border: '1px solid rgba(232,196,154,0.4)', color: 'rgba(232,196,154,0.9)', padding: '10px 24px', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '1.5px', marginTop: '10px' }}
+                  >
+                    VIEW MEAL PLANNER
+                  </button>
+                </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {MEAL_TYPES.map(type => {
@@ -767,7 +750,7 @@ export default function NutritionTracker() {
                       <input type="text" placeholder="e.g. 500mg daily" value={medDosage} onChange={e => setMedDosage(e.target.value)} style={inputStyle} />
                     </div>
                   </div>
-                  <button onClick={addMedication}
+                  <button onClick={handleAddMedication}
                     style={{ width: '100%', padding: '12px', background: 'rgba(93,187,99,0.2)', border: '1px solid rgba(93,187,99,0.4)', borderRadius: '4px', color: '#7dd97f', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px' }}>
                     ADD MEDICATION
                   </button>
@@ -794,7 +777,7 @@ export default function NutritionTracker() {
                             )}
                           </div>
                         </div>
-                        <button onClick={() => removeMedication(med.id)}
+                        <button onClick={() => handleRemoveMedication(med.id)}
                           style={{ background: 'none', border: 'none', color: 'rgba(255,80,80,0.8)', cursor: 'pointer', fontSize: '20px', fontWeight: 'bold' }}>
                           ×
                         </button>
@@ -1072,7 +1055,7 @@ export default function NutritionTracker() {
         )}
 
       </div>
-    {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+    {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
     </div>
   );
 }

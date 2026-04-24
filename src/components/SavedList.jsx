@@ -30,7 +30,6 @@ export default function SavedList() {
       );
       setItems(res.data || []);
     } catch (err) {
-      console.error('Load error:', err);
     }
     setLoading(false);
   };
@@ -43,7 +42,6 @@ export default function SavedList() {
       );
       setItems(prev => prev.filter(i => i.id !== id));
     } catch (err) {
-      console.error('Remove error:', err);
     }
   };
 

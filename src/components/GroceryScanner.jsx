@@ -5,6 +5,11 @@ import Toast from './Toast';
 import LoadingScreen from './LoadingScreen';
 import ReadAloudButton from './ReadAloudButton';
 import { useAccessibility } from '../AccessibilityContext';
+import { useUser } from '../UserContext';
+import { analyzeIngredients, verdictColor, verdictBackground, verdictIcon, CONDITION_TRIGGERS } from '../utils/safetyEngine';
+import { glassCard, inputStyle as themeInputStyle, btnPrimary, btnSuccess, btnDanger, sectionLabel, sectionLabelGold, COLORS, FONT } from '../styles/theme';
+import useToast from '../hooks/useToast';
+import useAuth from '../hooks/useAuth';
 
 const API = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 const BG = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200&q=90';
@@ -54,12 +59,9 @@ const getAlternatives = (productName, flaggedIngredients) => {
 export default function GroceryScanner() {
   const navigate = useNavigate();
   const { t, simpleMode, highContrast, fontSize } = useAccessibility();
-  const [user, setUser] = useState(null);
-  const [toast, setToast] = useState(null);
-
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type });
-  };
+  const { user, conditions, avoidances, addSavedItem, loading: ctxLoading } = useUser();
+  const { user: authUser } = useAuth();
+  const { toast, showToast, hideToast } = useToast();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -67,14 +69,12 @@ export default function GroceryScanner() {
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
   const [noResults, setNoResults] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (!stored) { navigate('/'); return; }
-    const parsed = JSON.parse(stored);
-    if (!parsed?.token) { navigate('/'); return; }
-    setUser(parsed);
-  }, [navigate]);
+    if (!ctxLoading && !user) navigate('/');
+  }, [user, ctxLoading, navigate]);
 
   const searchProducts = async () => {
     const q = query.trim().toLowerCase();
@@ -84,6 +84,8 @@ export default function GroceryScanner() {
     setSelected(null);
     setVerdict(null);
     setNoResults(false);
+    setIsSaved(false);
+    setSaveError('');
     try {
       const res = await axios.get(
         `${API}/food-search?query=${encodeURIComponent(q)}`,
@@ -93,15 +95,31 @@ export default function GroceryScanner() {
       setResults(products);
       if (products.length === 0) setNoResults(true);
     } catch (err) {
-      console.error('Search error:', err);
       setNoResults(true);
     }
     setSearching(false);
   };
 
+  const handleSave = async () => {
+    if (isSaved || !selected || !verdict) return;
+    const result = await addSavedItem({
+      itemName: selected.product_name || 'Unknown Product',
+      itemSource: 'Grocery',
+      brandOrRestaurant: selected.brands || '',
+      ingredients: selected.ingredients_text || selected.ingredients_text_en || '',
+      safetyVerdict: verdict.safetyVerdict || '',
+      matchedTriggers: (verdict.flaggedIngredients || []).join(', '),
+    });
+    if (result?.error) { setSaveError(result.error); return; }
+    setIsSaved(true);
+    setSaveError('');
+  };
+
   const checkProduct = async (product) => {
     setSelected(product);
     setVerdict(null);
+    setIsSaved(false);
+    setSaveError('');
     setLoading(true);
     const ingredients = (product.ingredients_text || product.ingredients_text_en || 'not available').substring(0, 2000);
     const productName = (product.product_name || 'Unknown Product').substring(0, 100);
@@ -118,31 +136,9 @@ export default function GroceryScanner() {
       }, { headers });
       setVerdict(res.data);
     } catch (err) {
-      console.error('Check error:', err);
       setVerdict({ safetyVerdict: 'Error', flaggedIngredients: [] });
     }
     setLoading(false);
-  };
-
-  const verdictColor = (v) => {
-    if (v === 'Safe') return '#7dd97f';
-    if (v === 'Caution') return '#f0c040';
-    if (v === 'Unsafe') return '#ff6b6b';
-    return '#aaaaaa';
-  };
-
-  const verdictBg = (v) => {
-    if (v === 'Safe') return 'rgba(93,187,99,0.2)';
-    if (v === 'Caution') return 'rgba(240,192,64,0.2)';
-    if (v === 'Unsafe') return 'rgba(255,107,107,0.2)';
-    return 'rgba(255,255,255,0.08)';
-  };
-
-  const verdictIcon = (v) => {
-    if (v === 'Safe') return '✓';
-    if (v === 'Caution') return '⚠';
-    if (v === 'Unsafe') return '✗';
-    return '?';
   };
 
   const inputStyle = {
@@ -291,7 +287,7 @@ export default function GroceryScanner() {
 
             {/* Verdict */}
             {verdict && (
-              <div style={{ background: verdictBg(verdict.safetyVerdict), border: `1px solid ${verdictColor(verdict.safetyVerdict)}60`, borderRadius: '4px', padding: '24px' }}>
+              <div style={{ background: verdictBackground(verdict.safetyVerdict), border: `1px solid ${verdictColor(verdict.safetyVerdict)}60`, borderRadius: '4px', padding: '24px' }}>
 
                 {/* Verdict header */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '20px' }}>
@@ -323,6 +319,34 @@ export default function GroceryScanner() {
                     </div>
                   </div>
                 )}
+
+                {/* Save to Profile */}
+                <div style={{ marginBottom: '16px' }}>
+                  <button
+                    onClick={handleSave}
+                    disabled={isSaved}
+                    style={{
+                      background: isSaved ? 'rgba(93,187,99,0.08)' : 'rgba(93,187,99,0.15)',
+                      border: '1px solid rgba(93,187,99,0.4)',
+                      color: 'rgba(93,187,99,0.9)',
+                      padding: '10px 24px',
+                      borderRadius: '4px',
+                      cursor: isSaved ? 'default' : 'pointer',
+                      fontFamily: 'Georgia, serif',
+                      fontSize: '12px',
+                      letterSpacing: '1.5px',
+                      marginTop: '16px',
+                      opacity: isSaved ? 0.6 : 1,
+                    }}
+                  >
+                    {isSaved ? '✓ SAVED TO PROFILE' : 'SAVE TO PROFILE'}
+                  </button>
+                  {saveError && (
+                    <div style={{ color: 'rgba(255,107,107,0.9)', fontSize: '11px', marginTop: '6px', fontStyle: 'italic' }}>
+                      {saveError}
+                    </div>
+                  )}
+                </div>
 
                 {/* Substitution suggestion */}
                 {/* Social share buttons */}
@@ -406,7 +430,7 @@ export default function GroceryScanner() {
           </span>
         </div>
       </div>
-    {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+    {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
     </div>
   );
 }

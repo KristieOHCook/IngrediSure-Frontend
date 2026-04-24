@@ -4,6 +4,9 @@ import axios from 'axios';
 import Toast from './Toast';
 import { useAccessibility } from '../AccessibilityContext';
 import LoadingScreen from './LoadingScreen';
+import { glassCard, inputStyle as themeInputStyle, btnPrimary, btnSuccess, btnDanger, sectionLabel, sectionLabelGold, COLORS, FONT } from '../styles/theme';
+import useToast from '../hooks/useToast';
+import useAuth from '../hooks/useAuth';
 
 const API = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 const BG = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&q=90';
@@ -45,12 +48,9 @@ const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
 export default function MealPlanner() {
   const navigate = useNavigate();
   const { t } = useAccessibility();
+  const { user: authUser } = useAuth();
   const [user, setUser] = useState(null);
-  const [toast, setToast] = useState(null);
-
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type });
-  };
+  const { toast, showToast, hideToast } = useToast();
   const [plan, setPlan] = useState(null);
   const [verdicts, setVerdicts] = useState({});
   const [loading, setLoading] = useState(false);
@@ -64,9 +64,9 @@ export default function MealPlanner() {
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
-    if (!stored) { navigate('/'); return; }
+    if (!stored) return;
     const parsed = JSON.parse(stored);
-    if (!parsed?.token) { navigate('/'); return; }
+    if (!parsed?.token) return;
     setUser(parsed);
 
     const savedPlan = localStorage.getItem('mealPlan');
@@ -75,7 +75,7 @@ export default function MealPlanner() {
         setPlan(JSON.parse(savedPlan));
       } catch (e) {}
     }
-  }, [navigate]);
+  }, []);
 
   const generatePlan = async () => {
     setGenerating(true);
@@ -179,7 +179,6 @@ export default function MealPlanner() {
       showToast(`${day}'s grocery list saved! ✓`, 'success');
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
-      console.error('Save error:', err);
     }
   };
 
@@ -323,7 +322,6 @@ export default function MealPlanner() {
       setMessage('Full week grocery list saved!');
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
-      console.error('Save error:', err);
     }
   };
 
@@ -600,7 +598,7 @@ export default function MealPlanner() {
           </>
         )}
       </div>
-    {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+    {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
     </div>
   );
 }

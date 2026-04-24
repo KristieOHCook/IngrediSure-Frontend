@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 export default function LoadingScreen({ bg }) {
   return (
@@ -88,4 +89,8 @@ const cardSkeletonStyle = {
   borderRadius: '4px',
   padding: '24px 28px',
   marginBottom: '20px',
+};
+
+LoadingScreen.propTypes = {
+  bg: PropTypes.string,
 };

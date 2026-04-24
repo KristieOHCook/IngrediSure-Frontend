@@ -2,12 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import LoadingScreen from './LoadingScreen';
+import useToast from '../hooks/useToast';
+import useAuth from '../hooks/useAuth';
 
 const API = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 const BG = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&q=90';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const { user: authUser } = useAuth();
+  const { toast, showToast, hideToast } = useToast();
   const [user, setUser] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [users, setUsers] = useState([]);
@@ -20,9 +24,9 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
-    if (!stored) { navigate('/'); return; }
+    if (!stored) return;
     const parsed = JSON.parse(stored);
-    if (!parsed?.token || parsed?.role !== 'ROLE_ADMIN') { navigate('/dashboard'); return; }
+    if (parsed?.role !== 'ROLE_ADMIN') { navigate('/dashboard'); return; }
     setUser(parsed);
     loadData(parsed);
   }, [navigate]);
@@ -43,7 +47,6 @@ export default function AdminDashboard() {
       setFeedback(feedbackRes.data || []);
       setFeedbackSummary(summaryRes.data);
     } catch (err) {
-      console.error('Load error:', err);
     }
     setLoading(false);
   };

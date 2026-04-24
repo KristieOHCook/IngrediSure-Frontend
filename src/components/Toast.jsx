@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
 
 export default function Toast({ message, type = 'success', onClose }) {
   const [visible, setVisible] = useState(true);
@@ -78,3 +79,9 @@ export default function Toast({ message, type = 'success', onClose }) {
     </div>
   );
 }
+
+Toast.propTypes = {
+  message: PropTypes.string,
+  type: PropTypes.string,
+  onClose: PropTypes.func,
+};

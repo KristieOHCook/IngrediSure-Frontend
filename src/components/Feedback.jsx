@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
+import useToast from '../hooks/useToast';
+import useAuth from '../hooks/useAuth';
 
 const API = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 const BG = 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=1200&q=90';
@@ -54,6 +55,8 @@ const WOULD_RECOMMEND = [
 
 export default function Feedback() {
   const navigate = useNavigate();
+  const { user: authUser } = useAuth();
+  const { toast, showToast, hideToast } = useToast();
   const [user, setUser] = useState(null);
   const [step, setStep] = useState(1);
   const [rating, setRating] = useState(0);
@@ -72,11 +75,11 @@ export default function Feedback() {
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
-    if (!stored) { navigate('/'); return; }
+    if (!stored) return;
     const parsed = JSON.parse(stored);
-    if (!parsed?.token) { navigate('/'); return; }
+    if (!parsed?.token) return;
     setUser(parsed);
-  }, [navigate]);
+  }, []);
 
   const toggleLike = (id) => setLiked(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   const toggleDislike = (id) => setDisliked(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);

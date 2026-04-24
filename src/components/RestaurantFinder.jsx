@@ -1,7 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Toast from './Toast';
 import LoadingScreen from './LoadingScreen';
+import { useUser } from '../UserContext';
+import { analyzeIngredients, verdictColor, verdictBackground, verdictIcon, CONDITION_TRIGGERS } from '../utils/safetyEngine';
+import { glassCard, inputStyle as themeInputStyle, btnPrimary, btnSuccess, btnDanger, sectionLabel, sectionLabelGold, COLORS, FONT } from '../styles/theme';
+import useToast from '../hooks/useToast';
+import useAuth from '../hooks/useAuth';
 
 const API = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 const BG = 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=90';
@@ -83,7 +89,8 @@ const SAMPLE_RESTAURANTS = [
 
 export default function RestaurantFinder() {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+  const { user, conditions, avoidances, addSavedItem, loading } = useUser();
+  const { user: authUser } = useAuth();
   const [zipCode, setZipCode] = useState('');
   const [restaurants, setRestaurants] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -92,14 +99,13 @@ export default function RestaurantFinder() {
   const [searched, setSearched] = useState(false);
   const [selectedMenuItem, setSelectedMenuItem] = useState(null);
   const [saferAlternatives, setSaferAlternatives] = useState([]);
+  const { toast, showToast, hideToast } = useToast();
+  const [savedRestaurantNames, setSavedRestaurantNames] = useState([]);
+  const [saveErrors, setSaveErrors] = useState({});
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (!stored) { navigate('/'); return; }
-    const parsed = JSON.parse(stored);
-    if (!parsed?.token) { navigate('/'); return; }
-    setUser(parsed);
-  }, [navigate]);
+    if (!loading && !user) navigate('/');
+  }, [user, loading, navigate]);
 
   const searchRestaurants = () => {
     if (!zipCode.trim()) return;
@@ -157,25 +163,55 @@ export default function RestaurantFinder() {
     }
   };
 
-  const verdictColor = (v) => {
-    if (v === 'Safe') return '#7dd97f';
-    if (v === 'Caution') return '#f0c040';
-    if (v === 'Unsafe') return '#ff6b6b';
-    return 'rgba(255,255,255,0.6)';
+  const saveRestaurantFromCard = async (e, restaurant) => {
+    e.stopPropagation();
+    if (savedRestaurantNames.includes(restaurant.name.toLowerCase())) return;
+    try {
+      const result = await addSavedItem({
+        itemName: restaurant.name,
+        itemSource: 'Restaurant',
+        brandOrRestaurant: restaurant.name,
+        ingredients: restaurant.cuisine,
+        safetyVerdict: 'Safe',
+        matchedTriggers: '',
+      });
+      if (result?.error) throw new Error(result.error);
+      setSavedRestaurantNames(prev => [...prev, restaurant.name.toLowerCase()]);
+      setSaveErrors(prev => ({ ...prev, [restaurant.id]: null }));
+    } catch (err) {
+      setSaveErrors(prev => ({ ...prev, [restaurant.id]: 'Failed to save. Please try again.' }));
+    }
   };
 
-  const verdictBg = (v) => {
-    if (v === 'Safe') return 'rgba(93,187,99,0.15)';
-    if (v === 'Caution') return 'rgba(240,192,64,0.15)';
-    if (v === 'Unsafe') return 'rgba(255,107,107,0.15)';
-    return 'rgba(255,255,255,0.05)';
-  };
-
-  const verdictIcon = (v) => {
-    if (v === 'Safe') return '✓';
-    if (v === 'Caution') return '⚠';
-    if (v === 'Unsafe') return '✗';
-    return '·';
+  const saveRestaurant = async () => {
+    if (!selected || !user) return;
+    if (savedRestaurantNames.includes(selected.name.toLowerCase())) {
+      showToast('This restaurant has already been saved to your profile.', 'warning');
+      return;
+    }
+    const verdicts = Object.values(menuVerdicts).map(v => v.safetyVerdict);
+    const allSafe = verdicts.every(v => v === 'Safe');
+    const allUnsafe = verdicts.every(v => v === 'Unsafe');
+    const overallVerdict = allSafe ? 'Safe' : allUnsafe ? 'Unsafe' : 'Caution';
+    const safeItems = selected.menu.filter(item => menuVerdicts[item.name]?.safetyVerdict === 'Safe').map(i => i.name);
+    const allFlagged = [...new Set(
+      Object.values(menuVerdicts).flatMap(v => v.flaggedIngredients || [])
+    )];
+    try {
+      const result = await addSavedItem({
+        itemName: selected.name,
+        itemSource: 'Restaurant',
+        brandOrRestaurant: selected.name,
+        ingredients: safeItems.join(', '),
+        safetyVerdict: overallVerdict,
+        matchedTriggers: allFlagged.join(', '),
+      });
+      if (result?.error) throw new Error(result.error);
+      setSavedRestaurantNames(prev => [...prev, selected.name.toLowerCase()]);
+      showToast('Restaurant saved to your profile!', 'success');
+    } catch (err) {
+      showToast('Error saving restaurant.', 'error');
+    }
   };
 
   const sectionStyle = {
@@ -198,6 +234,7 @@ export default function RestaurantFinder() {
 
   return (
     <div className="page-enter" style={{ minHeight: '100vh', fontFamily: 'Georgia, serif', position: 'relative', overflow: 'hidden' }}>
+      {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: `url(${BG})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
       <div style={{ position: 'fixed', inset: 0, zIndex: 1, background: 'linear-gradient(135deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.45) 50%, rgba(0,0,0,0.65) 100%)' }} />
 
@@ -256,26 +293,62 @@ export default function RestaurantFinder() {
               RESTAURANTS NEAR {zipCode}
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {restaurants.map(r => (
-                <div
-                  key={r.id}
-                  onClick={() => selectRestaurant(r)}
-                  style={{ padding: '20px 24px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '4px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.2s' }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.12)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                >
-                  <div>
-                    <div style={{ color: '#ffffff', fontSize: '17px', marginBottom: '6px', fontWeight: '400' }}>{r.name}</div>
-                    <div style={{ display: 'flex', gap: '16px' }}>
-                      <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '12px', fontStyle: 'italic' }}>{r.cuisine}</span>
-                      <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '12px' }}>{r.address}</span>
-                      <span style={{ color: '#e8c49a', fontSize: '12px' }}>{r.priceRange}</span>
-                      <span style={{ color: '#7dd97f', fontSize: '12px' }}>★ {r.rating}</span>
+              {restaurants.map(r => {
+                const alreadySaved = savedRestaurantNames.includes(r.name.toLowerCase());
+                return (
+                  <div
+                    key={r.id}
+                    style={{ padding: '20px 24px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '4px', transition: 'all 0.2s' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.12)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                  >
+                    {/* Clickable top row */}
+                    <div
+                      onClick={() => selectRestaurant(r)}
+                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', marginBottom: '14px' }}
+                    >
+                      <div>
+                        <div style={{ color: '#ffffff', fontSize: '17px', marginBottom: '6px', fontWeight: '400' }}>{r.name}</div>
+                        <div style={{ display: 'flex', gap: '16px' }}>
+                          <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '12px', fontStyle: 'italic' }}>{r.cuisine}</span>
+                          <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '12px' }}>{r.address}</span>
+                          <span style={{ color: '#e8c49a', fontSize: '12px' }}>{r.priceRange}</span>
+                          <span style={{ color: '#7dd97f', fontSize: '12px' }}>★ {r.rating}</span>
+                        </div>
+                      </div>
+                      <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '18px' }}>›</div>
+                    </div>
+
+                    {/* Bottom row — save button */}
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                      <div style={{ textAlign: 'right' }}>
+                        <button
+                          onClick={e => saveRestaurantFromCard(e, r)}
+                          disabled={alreadySaved}
+                          style={{
+                            padding: '7px 18px',
+                            background: alreadySaved ? 'rgba(93,187,99,0.12)' : 'rgba(232,196,154,0.15)',
+                            border: `1px solid ${alreadySaved ? 'rgba(93,187,99,0.35)' : 'rgba(232,196,154,0.5)'}`,
+                            borderRadius: '4px',
+                            color: alreadySaved ? '#7dd97f' : '#e8c49a',
+                            cursor: alreadySaved ? 'default' : 'pointer',
+                            fontFamily: 'Georgia, serif', fontSize: '11px', letterSpacing: '1.5px',
+                            opacity: alreadySaved ? 0.75 : 1,
+                            transition: 'all 0.2s',
+                          }}
+                        >
+                          {alreadySaved ? 'SAVED' : 'SAVE RESTAURANT'}
+                        </button>
+                        {saveErrors[r.id] && (
+                          <div style={{ color: '#ff6b6b', fontSize: '10px', marginTop: '5px', letterSpacing: '0.5px' }}>
+                            {saveErrors[r.id]}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '18px' }}>›</div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -338,7 +411,7 @@ export default function RestaurantFinder() {
                   <div
                     key={i}
                     onClick={() => handleMenuItemClick(item)}
-                    style={{ padding: '20px 24px', background: v ? verdictBg(v.safetyVerdict) : 'rgba(255,255,255,0.04)', border: `1px solid ${v ? verdictColor(v.safetyVerdict) + '40' : 'rgba(255,255,255,0.12)'}`, borderRadius: '4px', cursor: 'pointer', transition: 'all 0.2s' }}
+                    style={{ padding: '20px 24px', background: v ? verdictBackground(v.safetyVerdict) : 'rgba(255,255,255,0.04)', border: `1px solid ${v ? verdictColor(v.safetyVerdict) + '40' : 'rgba(255,255,255,0.12)'}`, borderRadius: '4px', cursor: 'pointer', transition: 'all 0.2s' }}
                     onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
                     onMouseLeave={e => e.currentTarget.style.opacity = '1'}
                   >
@@ -411,6 +484,18 @@ export default function RestaurantFinder() {
                     </div>
                   </div>
                 )}
+
+                {/* Save Restaurant button */}
+                <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                  <button
+                    onClick={saveRestaurant}
+                    style={{ padding: '11px 28px', background: 'rgba(232,196,154,0.15)', border: '1px solid rgba(232,196,154,0.5)', borderRadius: '4px', color: '#e8c49a', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px', transition: 'all 0.2s' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(232,196,154,0.28)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(232,196,154,0.15)'; }}
+                  >
+                    SAVE TO MY PROFILE
+                  </button>
+                </div>
               </>
             )}
           </div>
@@ -438,7 +523,7 @@ export default function RestaurantFinder() {
 
             {/* Verdict */}
             {menuVerdicts[selectedMenuItem.name] && (
-              <div style={{ padding: '16px 20px', background: verdictBg(menuVerdicts[selectedMenuItem.name].safetyVerdict), border: `1px solid ${verdictColor(menuVerdicts[selectedMenuItem.name].safetyVerdict)}50`, borderRadius: '4px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{ padding: '16px 20px', background: verdictBackground(menuVerdicts[selectedMenuItem.name].safetyVerdict), border: `1px solid ${verdictColor(menuVerdicts[selectedMenuItem.name].safetyVerdict)}50`, borderRadius: '4px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
                 <span style={{ fontSize: '28px', color: verdictColor(menuVerdicts[selectedMenuItem.name].safetyVerdict) }}>
                   {verdictIcon(menuVerdicts[selectedMenuItem.name].safetyVerdict)}
                 </span>

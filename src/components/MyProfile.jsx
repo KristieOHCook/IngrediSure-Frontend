@@ -1,8 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAccessibility } from '../AccessibilityContext';
+import { useUser } from '../UserContext';
 import Toast from './Toast';
+import { glassCard, inputStyle as themeInputStyle, btnPrimary, btnSuccess, btnDanger, sectionLabel, sectionLabelGold, COLORS, FONT } from '../styles/theme';
+import { FOOD_DRUG_INTERACTIONS, getFoodInteractions, checkAvoidanceConflicts } from '../constants/medications';
+import useToast from '../hooks/useToast';
+import useAuth from '../hooks/useAuth';
 
 const API = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 
@@ -25,19 +30,17 @@ export default function MyProfile() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { language } = useAccessibility();
-  const [user, setUser] = useState(null);
+  const { user, conditions, avoidances, medications, savedItems,
+          addCondition, removeCondition, addAvoidance, removeAvoidance,
+          addMedication, removeMedication, removeSavedItem, loading } = useUser();
+  const { user: authUser } = useAuth();
   const [activeTab, setActiveTab] = useState('conditions');
   const [showPassword, setShowPassword] = useState(false);
-  const [conditions, setConditions] = useState([]);
-  const [avoidances, setAvoidances] = useState([]);
-  const [savedItems, setSavedItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState(null);
+  const { toast, showToast, hideToast } = useToast();
   const [newCondition, setNewCondition] = useState('');
   const [customCondition, setCustomCondition] = useState('');
   const [useCustom, setUseCustom] = useState(false);
   const [newAvoidance, setNewAvoidance] = useState('');
-  const [medications, setMedications] = useState([]);
   const [newMedName, setNewMedName] = useState('');
   const [newMedDosage, setNewMedDosage] = useState('');
   const [newMedFrequency, setNewMedFrequency] = useState('');
@@ -46,180 +49,83 @@ export default function MyProfile() {
   const [newUsername, setNewUsername] = useState('');
   const [newEmail, setNewEmail] = useState('');
 
-  const showToast = (message, type = 'success') => setToast({ message, type });
+  const [savedFilter, setSavedFilter] = useState('All');
+  const [userAvatar, setUserAvatar] = useState(() => localStorage.getItem('userAvatar') || null);
+  const [avatarHovered, setAvatarHovered] = useState(false);
+  const avatarFileRef = useRef(null);
+
+  const handleAvatarUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const base64 = ev.target.result;
+      localStorage.setItem('userAvatar', base64);
+      setUserAvatar(base64);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (!stored) { navigate('/'); return; }
-    const parsed = JSON.parse(stored);
-    setUser(parsed);
-    setNewUsername(parsed.username);
-    setNewEmail(parsed.email || '');
-    loadData(parsed);
-  }, [navigate]);
+    if (!loading && !user) { navigate('/'); return; }
+    if (user) {
+      setNewUsername(user.username || '');
+      setNewEmail(user.email || '');
+    }
+  }, [user, loading, navigate]);
 
   useEffect(() => {
     const tab = searchParams.get('tab');
     if (tab) setActiveTab(tab);
   }, [searchParams]);
 
-  const headers = (u) => ({ Authorization: `Bearer ${u.token}` });
-
-  const loadData = async (u) => {
-    try {
-      const [condRes, avoRes, savedRes, medRes] = await Promise.all([
-        axios.get(`${API}/conditions/user/${u.userId}`, { headers: headers(u) }),
-        axios.get(`${API}/avoidances/user/${u.userId}`, { headers: headers(u) }),
-        axios.get(`${API}/saved-items/user/${u.userId}`, { headers: headers(u) }),
-        axios.get(`${API}/medications/user/${u.userId}`, { headers: headers(u) }),
-      ]);
-      setConditions(condRes.data || []);
-      setAvoidances(avoRes.data || []);
-      setSavedItems(savedRes.data || []);
-      setMedications(medRes.data || []);
-    } catch (err) {
-      console.error('Load error:', err);
-    }
-    setLoading(false);
-  };
-
-  const addCondition = async () => {
-    const conditionToAdd = useCustom ? customCondition.trim() : newCondition;
+  const handleAddCondition = async () => {
+    const conditionToAdd = useCustom ? customCondition.trim() : newCondition.trim();
     if (!conditionToAdd) return;
-    if (conditions.some(c => c.conditionName.toLowerCase().trim() === conditionToAdd.toLowerCase().trim())) {
-      showToast('This condition has already been added to your profile.', 'warning');
-      return;
-    }
-    try {
-      const res = await axios.post(`${API}/conditions`, {
-        conditionName: conditionToAdd,
-        userId: user.userId,
-      }, { headers: headers(user) });
-      setConditions(prev => [...prev, res.data]);
-      setNewCondition('');
-      setCustomCondition('');
-      showToast('Condition added! ✓', 'success');
-    } catch (err) { showToast('Error adding condition.', 'error'); }
+    const result = await addCondition(conditionToAdd);
+    if (result?.error) { showToast(result.error, 'warning'); return; }
+    setNewCondition('');
+    setCustomCondition('');
+    showToast('Condition added successfully.', 'success');
   };
 
-  const removeCondition = async (id) => {
-    try {
-      await axios.delete(`${API}/conditions/${id}`, { headers: headers(user) });
-      setConditions(prev => prev.filter(c => c.id !== id));
-      showToast('Condition removed.', 'delete');
-    } catch (err) { showToast('Error removing condition.', 'error'); }
+  const handleRemoveCondition = async (id) => {
+    await removeCondition(id);
+    showToast('Condition removed.', 'delete');
   };
 
-  const addAvoidance = async () => {
+  const handleAddAvoidance = async () => {
     if (!newAvoidance.trim()) return;
-    if (avoidances.some(a => a.ingredientName.toLowerCase().trim() === newAvoidance.toLowerCase().trim())) {
-      showToast('This ingredient is already in your avoidance list.', 'warning');
-      return;
-    }
-    try {
-      const res = await axios.post(`${API}/avoidances`, {
-        ingredientName: newAvoidance.trim(),
-        userId: user.userId,
-      }, { headers: headers(user) });
-      setAvoidances(prev => [...prev, res.data]);
-      setNewAvoidance('');
-      showToast('Ingredient added! ✓', 'success');
-    } catch (err) { showToast('Error adding ingredient.', 'error'); }
+    const result = await addAvoidance(newAvoidance.trim());
+    if (result?.error) { showToast(result.error, 'warning'); return; }
+    setNewAvoidance('');
+    showToast('Avoidance added successfully.', 'success');
   };
 
-  const removeAvoidance = async (id) => {
-    try {
-      await axios.delete(`${API}/avoidances/${id}`, { headers: headers(user) });
-      setAvoidances(prev => prev.filter(a => a.id !== id));
-      showToast('Ingredient removed.', 'delete');
-    } catch (err) { showToast('Error removing ingredient.', 'error'); }
+  const handleRemoveAvoidance = async (id) => {
+    await removeAvoidance(id);
+    showToast('Avoidance removed.', 'delete');
   };
 
-  // Food-drug interaction database
-  const FOOD_DRUG_INTERACTIONS = {
-    'Warfarin': { flags: ['vitamin k', 'kale', 'spinach', 'broccoli', 'brussels sprouts', 'green tea', 'grapefruit', 'alcohol'], warning: 'Vitamin K rich foods and grapefruit can reduce effectiveness' },
-    'Metformin': { flags: ['alcohol', 'refined sugar', 'white bread', 'white rice', 'soda', 'candy', 'high fructose corn syrup'], warning: 'High sugar and alcohol can worsen blood sugar control' },
-    'Lisinopril': { flags: ['potassium', 'banana', 'orange', 'salt substitute', 'spinach', 'avocado'], warning: 'High potassium foods can cause dangerous potassium levels' },
-    'Atorvastatin': { flags: ['grapefruit', 'grapefruit juice', 'alcohol'], warning: 'Grapefruit significantly increases medication levels in blood' },
-    'Simvastatin': { flags: ['grapefruit', 'grapefruit juice', 'alcohol', 'large amounts of niacin'], warning: 'Grapefruit can cause serious muscle damage with this medication' },
-    'Levothyroxine': { flags: ['soy', 'calcium', 'high fiber', 'walnuts', 'coffee', 'cottonseed meal'], warning: 'These foods can reduce absorption — take medication on empty stomach' },
-    'Clopidogrel': { flags: ['grapefruit', 'alcohol', 'vitamin e', 'fish oil', 'garlic', 'ginger'], warning: 'These can increase bleeding risk' },
-    'Amlodipine': { flags: ['grapefruit', 'grapefruit juice'], warning: 'Grapefruit can increase medication levels dangerously' },
-    'Metoprolol': { flags: ['alcohol', 'caffeine'], warning: 'Alcohol and caffeine can interfere with heart rate control' },
-    'Sertraline': { flags: ['alcohol', 'grapefruit', 'tyramine', 'aged cheese', 'cured meats', 'sauerkraut'], warning: 'Alcohol worsens depression; tyramine can cause dangerous blood pressure spikes' },
-    'Fluoxetine': { flags: ['alcohol', 'grapefruit', 'tyramine'], warning: 'Alcohol and grapefruit can increase side effects' },
-    'Alprazolam': { flags: ['alcohol', 'grapefruit', 'caffeine'], warning: 'Alcohol dramatically increases sedation risk' },
-    'Gabapentin': { flags: ['alcohol', 'magnesium'], warning: 'Alcohol increases dizziness and sedation' },
-    'Prednisone': { flags: ['sodium', 'salt', 'alcohol', 'calcium', 'potassium', 'sugar'], warning: 'Avoid high sodium — increases fluid retention; take calcium supplements' },
-    'Furosemide': { flags: ['licorice', 'alcohol', 'sodium', 'salt'], warning: 'Licorice can reduce effectiveness; watch sodium intake' },
-    'Spironolactone': { flags: ['potassium', 'banana', 'orange', 'salt substitute', 'avocado', 'coconut water'], warning: 'High potassium foods can cause dangerous potassium levels' },
-    'Ciprofloxacin': { flags: ['dairy', 'milk', 'yogurt', 'cheese', 'calcium', 'antacids', 'iron', 'caffeine'], warning: 'Dairy and calcium reduce absorption significantly' },
-    'Doxycycline': { flags: ['dairy', 'milk', 'yogurt', 'cheese', 'calcium', 'iron', 'antacids'], warning: 'Dairy reduces absorption — take with water only' },
-    'Amoxicillin': { flags: ['alcohol'], warning: 'Alcohol can reduce effectiveness and increase side effects' },
-    'Ibuprofen': { flags: ['alcohol', 'sodium', 'salt'], warning: 'Alcohol increases stomach bleeding risk' },
-    'Aspirin': { flags: ['alcohol', 'vitamin e', 'fish oil', 'garlic', 'ginger', 'grapefruit'], warning: 'Increases bleeding risk with alcohol and blood thinning supplements' },
-    'Insulin': { flags: ['alcohol', 'refined sugar', 'high fructose corn syrup', 'white bread', 'white rice', 'soda', 'candy'], warning: 'Alcohol can cause dangerous blood sugar drops; high sugar spikes glucose' },
-    'Glipizide': { flags: ['alcohol', 'refined sugar', 'high fructose corn syrup'], warning: 'Alcohol can cause dangerous low blood sugar' },
-    'Hydrochlorothiazide': { flags: ['licorice', 'alcohol', 'sodium', 'potassium'], warning: 'Monitor potassium levels; avoid licorice' },
-    'Digoxin': { flags: ['licorice', 'high fiber', 'bran', 'St Johns Wort', 'caffeine'], warning: 'Licorice and high fiber can reduce effectiveness dangerously' },
-  };
-
-  const getFoodInteractions = (medName) => {
-    if (!medName) return null;
-    const key = Object.keys(FOOD_DRUG_INTERACTIONS).find(k =>
-      medName.toLowerCase().includes(k.toLowerCase()) ||
-      k.toLowerCase().includes(medName.toLowerCase())
-    );
-    return key ? FOOD_DRUG_INTERACTIONS[key] : null;
-  };
-
-  const checkAvoidanceConflicts = (medName) => {
-    if (!medName) return [];
-    const interaction = getFoodInteractions(medName);
-    if (!interaction) return [];
-    return avoidances.filter(a =>
-      interaction.flags.some(flag =>
-        a.ingredientName.toLowerCase().includes(flag.toLowerCase()) ||
-        flag.toLowerCase().includes(a.ingredientName.toLowerCase())
-      )
-    );
-  };
-
-  const addMedication = async () => {
+  const handleAddMedication = async () => {
     if (!newMedName.trim()) return;
-    if (medications.some(m => m.medicationName.toLowerCase() === newMedName.trim().toLowerCase())) {
-      showToast('This medication has already been added', 'error');
-      return;
-    }
-    try {
-      const res = await axios.post(`${API}/medications`, {
-        userId: user.userId,
-        medicationName: newMedName.trim(),
-        dosage: newMedDosage.trim(),
-        frequency: newMedFrequency.trim(),
-      }, { headers: headers(user) });
-      setMedications(prev => [...prev, res.data]);
-      setNewMedName('');
-      setNewMedDosage('');
-      setNewMedFrequency('');
-      showToast('Medication added! ✓', 'success');
-    } catch (err) { showToast('Error adding medication.', 'error'); }
+    const result = await addMedication(newMedName.trim(), newMedDosage.trim(), newMedFrequency.trim());
+    if (result?.error) { showToast(result.error, 'warning'); return; }
+    setNewMedName('');
+    setNewMedDosage('');
+    setNewMedFrequency('');
+    showToast('Medication added successfully.', 'success');
   };
 
-  const removeMedication = async (id) => {
-    try {
-      await axios.delete(`${API}/medications/${id}`, { headers: headers(user) });
-      setMedications(prev => prev.filter(m => m.id !== id));
-      showToast('Medication removed.', 'delete');
-    } catch (err) { showToast('Error removing medication.', 'error'); }
+  const handleRemoveMedication = async (id) => {
+    await removeMedication(id);
+    showToast('Medication removed.', 'delete');
   };
 
-  const removeSavedItem = async (id) => {
-    try {
-      await axios.delete(`${API}/saved-items/${id}`, { headers: headers(user) });
-      setSavedItems(prev => prev.filter(s => s.id !== id));
-      showToast('Item removed.', 'delete');
-    } catch (err) { showToast('Error removing item.', 'error'); }
+  const handleRemoveSavedItem = async (id) => {
+    await removeSavedItem(id);
+    showToast('Item removed.', 'delete');
   };
 
   const bg = 'linear-gradient(135deg, #1a1a1a 0%, #2d1f1f 50%, #1a1a1a 100%)';
@@ -271,12 +177,36 @@ export default function MyProfile() {
           ← DASHBOARD
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{
-            width: '64px', height: '64px', borderRadius: '50%',
-            background: 'rgba(232,196,154,0.2)', border: '2px solid rgba(232,196,154,0.4)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '28px',
-          }}>👤</div>
+          <div
+            style={{ position: 'relative', width: '72px', height: '72px', flexShrink: 0, cursor: 'pointer' }}
+            onClick={() => avatarFileRef.current?.click()}
+            onMouseEnter={() => setAvatarHovered(true)}
+            onMouseLeave={() => setAvatarHovered(false)}
+          >
+            <div style={{
+              width: '72px', height: '72px', borderRadius: '50%',
+              background: userAvatar ? 'transparent' : 'rgba(232,196,154,0.2)',
+              border: '2px solid rgba(232,196,154,0.6)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              overflow: 'hidden', fontSize: '28px', fontWeight: '600', color: '#e8c49a',
+            }}>
+              {userAvatar
+                ? <img src={userAvatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : (user?.username?.[0]?.toUpperCase() || '?')
+              }
+            </div>
+            {avatarHovered && (
+              <div style={{
+                position: 'absolute', bottom: 0, right: 0,
+                width: '22px', height: '22px', borderRadius: '50%',
+                background: 'rgba(0,0,0,0.75)', border: '1.5px solid rgba(255,255,255,0.4)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#ffffff', fontSize: '14px', fontWeight: '700', lineHeight: 1,
+                pointerEvents: 'none',
+              }}>+</div>
+            )}
+            <input ref={avatarFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} />
+          </div>
           <div>
             <h1 style={{ margin: 0, fontSize: '24px', fontWeight: '400', color: '#e8c49a', letterSpacing: '2px' }}>
               {user?.username?.toUpperCase()}
@@ -290,16 +220,17 @@ export default function MyProfile() {
         {/* Stats Bar */}
         <div style={{ display: 'flex', gap: '16px', marginTop: '24px', flexWrap: 'wrap' }}>
           {[
-            { label: 'CONDITIONS', value: conditions.length, icon: '' },
-            { label: 'AVOIDANCES', value: avoidances.length, icon: '' },
-            { label: 'MEDICATIONS', value: medications.length, icon: '' },
-            { label: 'SAVED SCANS', value: savedItems.length, icon: '' },
+            { label: 'CONDITIONS', value: conditions.length, color: '#e8c49a' },
+            { label: 'AVOIDANCES', value: avoidances.length, color: '#e8c49a' },
+            { label: 'MEDICATIONS', value: medications.length, color: '#e8c49a' },
+            { label: 'SAVED HISTORY', value: savedItems.length, color: '#e8c49a' },
+            { label: 'RESTAURANTS', value: savedItems.filter(i => i.itemSource === 'Restaurant').length, color: 'rgba(74,159,212,0.85)' },
+            { label: 'RECIPES', value: savedItems.filter(i => i.itemSource === 'Recipe').length, color: 'rgba(162,155,254,0.85)' },
           ].map(stat => (
             <div key={stat.label} style={{
               ...glass, flex: 1, minWidth: '120px', textAlign: 'center', padding: '16px',
             }}>
-              <div style={{ fontSize: '24px', marginBottom: '4px' }}>{stat.icon}</div>
-              <div style={{ fontSize: '28px', color: '#e8c49a', fontWeight: '400' }}>{stat.value}</div>
+              <div style={{ fontSize: '28px', color: stat.color, fontWeight: '400' }}>{stat.value}</div>
               <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', letterSpacing: '2px' }}>{stat.label}</div>
             </div>
           ))}
@@ -313,7 +244,7 @@ export default function MyProfile() {
             { key: 'conditions', label: 'Health Conditions' },
             { key: 'avoidances', label: 'Avoidances & Restrictions' },
             { key: 'medications', label: 'Medications' },
-            { key: 'saved', label: 'Saved Scans' },
+            { key: 'saved', label: 'Saved History' },
             { key: 'account', label: 'Account' },
           ].map(tab => (
             <button
@@ -350,7 +281,7 @@ export default function MyProfile() {
               {conditions.map(c => (
                 <div key={c.id} style={chipStyle}>
                   {c.conditionName}
-                  <button onClick={() => removeCondition(c.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '16px', padding: 0, lineHeight: 1 }}>×</button>
+                  <button onClick={() => handleRemoveCondition(c.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '16px', padding: 0, lineHeight: 1 }}>×</button>
                 </div>
               ))}
             </div>
@@ -382,11 +313,11 @@ export default function MyProfile() {
                   placeholder="e.g. Crohn's Disease, PCOS, Gout..."
                   value={customCondition}
                   onChange={e => setCustomCondition(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && addCondition()}
+                  onKeyDown={e => e.key === 'Enter' && handleAddCondition()}
                   style={{ ...inputStyle, flex: 1 }}
                 />
               )}
-              <button onClick={addCondition} style={btnStyle('#7dd97f')}>ADD</button>
+              <button onClick={handleAddCondition} style={btnStyle('#7dd97f')}>ADD</button>
             </div>
           </div>
         )}
@@ -414,7 +345,7 @@ export default function MyProfile() {
               {avoidances.map(a => (
                 <div key={a.id} style={{ ...chipStyle, borderColor: 'rgba(255,107,53,0.4)', color: '#ff9966' }}>
                   {a.ingredientName}
-                  <button onClick={() => removeAvoidance(a.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '16px', padding: 0, lineHeight: 1 }}>×</button>
+                  <button onClick={() => handleRemoveAvoidance(a.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '16px', padding: 0, lineHeight: 1 }}>×</button>
                 </div>
               ))}
             </div>
@@ -426,10 +357,10 @@ export default function MyProfile() {
                 placeholder="e.g. high fructose corn syrup, sodium, gluten..."
                 value={newAvoidance}
                 onChange={e => setNewAvoidance(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && addAvoidance()}
+                onKeyDown={e => e.key === 'Enter' && handleAddAvoidance()}
                 style={{ ...inputStyle, flex: 1 }}
               />
-              <button onClick={addAvoidance} style={btnStyle('#7dd97f')}>ADD</button>
+              <button onClick={handleAddAvoidance} style={btnStyle('#7dd97f')}>ADD</button>
             </div>
 
             {/* Quick links */}
@@ -484,10 +415,10 @@ export default function MyProfile() {
                   placeholder="Frequency (e.g. Twice daily)..."
                   value={newMedFrequency}
                   onChange={e => setNewMedFrequency(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && addMedication()}
+                  onKeyDown={e => e.key === 'Enter' && handleAddMedication()}
                   style={{ ...inputStyle, flex: 1, minWidth: '140px' }}
                 />
-                <button onClick={addMedication} style={btnStyle('#7dd97f')}>ADD</button>
+                <button onClick={handleAddMedication} style={btnStyle('#7dd97f')}>ADD</button>
               </div>
             </div>
 
@@ -502,7 +433,7 @@ export default function MyProfile() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {medications.map(med => {
                 const interaction = getFoodInteractions(med?.medicationName);
-                const conflicts = checkAvoidanceConflicts(med?.medicationName);
+                const conflicts = checkAvoidanceConflicts(med?.medicationName, avoidances);
                 return (
                   <div key={med.id} style={{
                     padding: '20px',
@@ -529,7 +460,7 @@ export default function MyProfile() {
                           )}
                         </div>
                       </div>
-                      <button onClick={() => removeMedication(med.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,107,107,0.6)', cursor: 'pointer', fontSize: '18px' }}>×</button>
+                      <button onClick={() => handleRemoveMedication(med.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,107,107,0.6)', cursor: 'pointer', fontSize: '18px' }}>×</button>
                     </div>
 
                     {/* Conflicts with current avoidances */}
@@ -601,7 +532,7 @@ export default function MyProfile() {
                     <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', letterSpacing: '1px' }}>WITH FOOD INTERACTIONS</div>
                   </div>
                   <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '24px', color: '#ff6b6b' }}>{medications.filter(m => checkAvoidanceConflicts(m?.medicationName).length > 0).length}</div>
+                    <div style={{ fontSize: '24px', color: '#ff6b6b' }}>{medications.filter(m => checkAvoidanceConflicts(m?.medicationName, avoidances).length > 0).length}</div>
                     <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', letterSpacing: '1px' }}>CONFLICT WITH AVOIDANCES</div>
                   </div>
                 </div>
@@ -613,57 +544,132 @@ export default function MyProfile() {
           </div>
         )}
 
-        {/* SAVED SCANS TAB */}
-        {activeTab === 'saved' && (
-          <div style={glass}>
-            <h2 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: '400', color: 'rgba(255,255,255,0.6)', letterSpacing: '3px' }}>
-              SAVED SAFETY CHECKS
-            </h2>
-            <p style={{ margin: '0 0 20px', fontSize: '13px', color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' }}>
-              All products and menu items you have previously scanned
-            </p>
+        {/* SAVED HISTORY TAB */}
+        {activeTab === 'saved' && (() => {
+          const SOURCE_BADGE = {
+            Restaurant: { label: 'RESTAURANT', bg: 'rgba(74,159,212,0.2)',  border: 'rgba(74,159,212,0.5)',  color: '#4a9fd4' },
+            Recipe:     { label: 'RECIPE',      bg: 'rgba(162,155,254,0.2)', border: 'rgba(162,155,254,0.5)', color: '#a29bfe' },
+            Barcode:    { label: 'BARCODE',      bg: 'rgba(255,107,53,0.2)',  border: 'rgba(255,107,53,0.5)',  color: '#ff6b35' },
+            Grocery:    { label: 'GROCERY',      bg: 'rgba(93,187,99,0.2)',   border: 'rgba(93,187,99,0.5)',   color: '#5dbb63' },
+          };
+          const getSource = (item) => {
+            const s = item.itemSource;
+            if (!s || s === '' || s === 'Grocery') return 'Grocery';
+            return s;
+          };
+          const FILTERS = ['All', 'Restaurants', 'Grocery', 'Barcode', 'Recipe'];
+          const filteredItems = savedItems.filter(item => {
+            if (savedFilter === 'All') return true;
+            if (savedFilter === 'Restaurants') return item.itemSource === 'Restaurant';
+            if (savedFilter === 'Grocery') return !item.itemSource || item.itemSource === '' || item.itemSource === 'Grocery';
+            return item.itemSource === savedFilter;
+          });
+          return (
+            <div style={glass}>
+              <h2 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: '400', color: 'rgba(255,255,255,0.6)', letterSpacing: '3px' }}>
+                SAVED HISTORY
+              </h2>
+              <p style={{ margin: '0 0 20px', fontSize: '13px', color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' }}>
+                All products, restaurants, and recipes you have previously scanned or saved
+              </p>
 
-            {savedItems.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '40px', color: 'rgba(255,255,255,0.3)' }}>
-                <div style={{ fontSize: '40px', marginBottom: '12px' }}>📋</div>
-                <p>No saved scans yet. Start scanning products!</p>
-                <button onClick={() => navigate('/grocery')} style={btnStyle()}>GO TO GROCERY SCANNER</button>
+              {/* Filter bar */}
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                {FILTERS.map(f => (
+                  <button
+                    key={f}
+                    onClick={() => setSavedFilter(f)}
+                    style={{
+                      padding: '7px 16px', borderRadius: '4px', cursor: 'pointer',
+                      fontFamily: 'Georgia, serif', fontSize: '11px', letterSpacing: '1.5px',
+                      background: savedFilter === f ? 'rgba(232,196,154,0.2)' : 'rgba(255,255,255,0.05)',
+                      border: `1px solid ${savedFilter === f ? 'rgba(232,196,154,0.5)' : 'rgba(255,255,255,0.15)'}`,
+                      color: savedFilter === f ? '#e8c49a' : 'rgba(255,255,255,0.45)',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >{f}</button>
+                ))}
               </div>
-            )}
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '500px', overflowY: 'auto' }}>
-              {savedItems.map(item => (
-                <div key={item.id} style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '16px', background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px',
-                  flexWrap: 'wrap', gap: '8px',
-                }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '14px', color: '#ffffff', marginBottom: '4px' }}>{item.itemName}</div>
-                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>{item.brandOrRestaurant} • {item.itemSource}</div>
-                    {item.matchedTriggers && (
-                      <div style={{ fontSize: '11px', color: 'rgba(255,107,53,0.8)', marginTop: '4px' }}>
-                        ⚠ {item.matchedTriggers}
-                      </div>
-                    )}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{
-                      padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: '600',
-                      color: verdictColor(item.safetyVerdict),
-                      border: `1px solid ${verdictColor(item.safetyVerdict)}`,
-                      background: `${verdictColor(item.safetyVerdict)}22`,
-                    }}>
-                      {item.safetyVerdict}
-                    </span>
-                    <button onClick={() => removeSavedItem(item.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,107,107,0.6)', cursor: 'pointer', fontSize: '18px' }}>🗑</button>
-                  </div>
+              {filteredItems.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '40px', color: 'rgba(255,255,255,0.3)' }}>
+                  <p style={{ marginBottom: '16px' }}>
+                    {savedItems.length === 0 ? 'No saved items yet. Start scanning products!' : `No ${savedFilter.toLowerCase()} saved yet.`}
+                  </p>
+                  {savedItems.length === 0 && (
+                    <button onClick={() => navigate('/grocery')} style={btnStyle()}>GO TO GROCERY SCANNER</button>
+                  )}
                 </div>
-              ))}
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '500px', overflowY: 'auto' }}>
+                {filteredItems.map(item => {
+                  const src = getSource(item);
+                  const badge = SOURCE_BADGE[src] || SOURCE_BADGE.Grocery;
+                  const vColor = verdictColor(item.safetyVerdict);
+                  return (
+                    <div key={item.id} style={{
+                      padding: '16px', background: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px',
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                            <span style={{ fontSize: '14px', color: '#ffffff' }}>{item.itemName}</span>
+                            <span style={{
+                              padding: '2px 8px', borderRadius: '10px', fontSize: '9px', letterSpacing: '1px',
+                              background: badge.bg, border: `1px solid ${badge.border}`, color: badge.color,
+                              flexShrink: 0,
+                            }}>{badge.label}</span>
+                          </div>
+                          {item.brandOrRestaurant && (
+                            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>{item.brandOrRestaurant}</div>
+                          )}
+                          {item.savedAt && (
+                            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>
+                              {new Date(item.savedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </div>
+                          )}
+                          {item.matchedTriggers && (
+                            <div style={{ fontSize: '11px', color: 'rgba(255,107,53,0.8)', marginTop: '4px' }}>
+                              Flagged: {item.matchedTriggers}
+                            </div>
+                          )}
+                          {src === 'Restaurant' && item.ingredients && (
+                            <div style={{ marginTop: '8px' }}>
+                              <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px', marginBottom: '5px' }}>SAFE MENU ITEMS</div>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                                {item.ingredients.split(', ').filter(Boolean).map((menuItem, idx) => (
+                                  <span key={idx} style={{ padding: '2px 8px', background: 'rgba(93,187,99,0.12)', border: '1px solid rgba(93,187,99,0.25)', borderRadius: '10px', color: '#7dd97f', fontSize: '10px' }}>
+                                    {menuItem}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+                          <span style={{
+                            padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: '600',
+                            color: vColor, border: `1px solid ${vColor}`, background: `${vColor}22`,
+                          }}>
+                            {item.safetyVerdict || 'Unknown'}
+                          </span>
+                          <button
+                            onClick={() => handleRemoveSavedItem(item.id)}
+                            style={{ background: 'none', border: '1px solid rgba(255,107,107,0.3)', borderRadius: '4px', color: 'rgba(255,107,107,0.7)', cursor: 'pointer', fontSize: '11px', padding: '4px 10px', fontFamily: 'Georgia, serif', letterSpacing: '1px' }}
+                          >
+                            REMOVE
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* ACCOUNT TAB */}
         {activeTab === 'account' && (
@@ -755,7 +761,7 @@ export default function MyProfile() {
         )}
       </div>
 
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
     </div>
   );
 }

@@ -11,7 +11,6 @@ function MealList() {
                 setMeals(response.data);
             })
             .catch(error => {
-                console.error("Connection failed! Is IntelliJ running?", error);
             });
     }, []);
 

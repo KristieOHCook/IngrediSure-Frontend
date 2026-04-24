@@ -1,8 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Toast from './Toast';
+import { useUser } from '../UserContext';
 import LoadingScreen from './LoadingScreen';
+import { glassCard, inputStyle as themeInputStyle, btnPrimary, btnSuccess, btnDanger, sectionLabel, sectionLabelGold, COLORS, FONT } from '../styles/theme';
+import useToast from '../hooks/useToast';
+import useAuth from '../hooks/useAuth';
 
 const API = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 const BG = 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=90';
@@ -27,14 +31,10 @@ const COMMON_CONDITIONS = [
 
 export default function FamilyHub() {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [toast, setToast] = useState(null);
-
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type });
-  };
+  const { user, conditions: userConditions, avoidances: userAvoidances, loading } = useUser();
+  const { user: authUser } = useAuth();
+  const { toast, showToast, hideToast } = useToast();
   const [members, setMembers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [selectedMember, setSelectedMember] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
@@ -45,40 +45,40 @@ export default function FamilyHub() {
   const [memberName, setMemberName] = useState('');
   const [relationship, setRelationship] = useState('');
   const [age, setAge] = useState('');
-  const [conditions, setConditions] = useState([]);
+  const [memberConditions, setMemberConditions] = useState([]);
   const [customCondition, setCustomCondition] = useState('');
-  const [avoidances, setAvoidances] = useState('');
+  const [memberAvoidances, setMemberAvoidances] = useState('');
   const [avatarColor, setAvatarColor] = useState('#e8c49a');
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (!stored) { navigate('/'); return; }
-    const parsed = JSON.parse(stored);
-    if (!parsed?.token) { navigate('/'); return; }
-    setUser(parsed);
-    loadMembers(parsed);
-  }, [navigate]);
+    if (!loading && !user) navigate('/');
+  }, [user, loading, navigate]);
 
-  const loadMembers = async (u) => {
-    try {
-      const res = await axios.get(
-        `${API}/family/members/${u.userId}`,
-        { headers: { Authorization: `Bearer ${u.token}` } }
-      );
-      setMembers(res.data || []);
-    } catch (err) { console.error(err); }
-    setLoading(false);
-  };
+  useEffect(() => {
+    if (!user?.token) return;
+    const loadMembers = async () => {
+      try {
+        const res = await axios.get(
+          `${API}/family/members/${user.userId}`,
+          { headers: { Authorization: `Bearer ${user.token}` } }
+        );
+        const memberList = res.data || [];
+        setMembers(memberList);
+        loadFamilyAvatars(memberList);
+      } catch (err) { }
+    };
+    loadMembers();
+  }, [user]);
 
   const resetForm = () => {
     setMemberName(''); setRelationship(''); setAge('');
-    setConditions([]); setCustomCondition('');
-    setAvoidances(''); setAvatarColor('#e8c49a');
+    setMemberConditions([]); setCustomCondition('');
+    setMemberAvoidances(''); setAvatarColor('#e8c49a');
     setEditingMember(null);
   };
 
   const toggleCondition = (condition) => {
-    setConditions(prev =>
+    setMemberConditions(prev =>
       prev.includes(condition)
         ? prev.filter(c => c !== condition)
         : [...prev, condition]
@@ -87,7 +87,7 @@ export default function FamilyHub() {
 
   const addCustomCondition = () => {
     if (!customCondition.trim()) return;
-    setConditions(prev => [...prev, customCondition.trim()]);
+    setMemberConditions(prev => [...prev, customCondition.trim()]);
     setCustomCondition('');
   };
 
@@ -100,8 +100,8 @@ export default function FamilyHub() {
     const payload = {
       memberName, relationship,
       age: age ? parseInt(age) : null,
-      conditions: conditions.join(', '),
-      avoidances, avatarColor,
+      conditions: memberConditions.join(', '),
+      avoidances: memberAvoidances, avatarColor,
     };
     try {
       if (editingMember) {
@@ -120,7 +120,7 @@ export default function FamilyHub() {
       resetForm();
       setShowAddForm(false);
       setTimeout(() => setMessage(''), 3000);
-    } catch (err) { console.error(err); }
+    } catch (err) { }
   };
 
   const deleteMember = async (id, name) => {
@@ -131,7 +131,7 @@ export default function FamilyHub() {
       if (selectedMember?.id === id) setSelectedMember(null);
       showToast(`${name} removed from family hub.`, 'delete');
       setTimeout(() => setMessage(''), 3000);
-    } catch (err) { console.error(err); }
+    } catch (err) { }
   };
 
   const startEdit = (member) => {
@@ -139,13 +139,41 @@ export default function FamilyHub() {
     setMemberName(member.memberName);
     setRelationship(member.relationship);
     setAge(member.age?.toString() || '');
-    setConditions(member.conditions ? member.conditions.split(', ').filter(Boolean) : []);
-    setAvoidances(member.avoidances || '');
+    setMemberConditions(member.conditions ? member.conditions.split(', ').filter(Boolean) : []);
+    setMemberAvoidances(member.avoidances || '');
     setAvatarColor(member.avatarColor || '#e8c49a');
     setShowAddForm(true);
   };
 
   const getInitials = (name) => name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+  const [familyAvatars, setFamilyAvatars] = useState({});
+  const [hoveredAvatarId, setHoveredAvatarId] = useState(null);
+  const [uploadingMemberId, setUploadingMemberId] = useState(null);
+  const familyFileInputRef = useRef(null);
+
+  const loadFamilyAvatars = (memberList) => {
+    const avatars = {};
+    memberList.forEach(m => {
+      const stored = localStorage.getItem(`familyAvatar_${m.id}`);
+      if (stored) avatars[m.id] = stored;
+    });
+    setFamilyAvatars(avatars);
+  };
+
+  const handleFamilyAvatarUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file || !uploadingMemberId) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const base64 = ev.target.result;
+      localStorage.setItem(`familyAvatar_${uploadingMemberId}`, base64);
+      setFamilyAvatars(prev => ({ ...prev, [uploadingMemberId]: base64 }));
+      setUploadingMemberId(null);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
 
   const sectionStyle = {
     background: 'rgba(255,255,255,0.07)',
@@ -167,8 +195,19 @@ export default function FamilyHub() {
 
   if (loading) return <LoadingScreen bg={BG} />;
 
+  const familyAvatarInput = (
+    <input
+      ref={familyFileInputRef}
+      type="file"
+      accept="image/*"
+      style={{ display: 'none' }}
+      onChange={handleFamilyAvatarUpload}
+    />
+  );
+
   return (
     <div className="page-enter" style={{ minHeight: '100vh', fontFamily: 'Georgia, serif', position: 'relative', overflow: 'hidden' }}>
+      {familyAvatarInput}
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: `url(${BG})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
       <div style={{ position: 'fixed', inset: 0, zIndex: 1, background: 'linear-gradient(135deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.45) 50%, rgba(0,0,0,0.65) 100%)' }} />
 
@@ -273,8 +312,8 @@ export default function FamilyHub() {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
                 {COMMON_CONDITIONS.map(c => (
                   <button key={c} onClick={() => toggleCondition(c)}
-                    style={{ padding: '6px 14px', background: conditions.includes(c) ? 'rgba(93,187,99,0.25)' : 'rgba(255,255,255,0.06)', border: conditions.includes(c) ? '1px solid rgba(93,187,99,0.5)' : '1px solid rgba(255,255,255,0.12)', borderRadius: '2px', color: conditions.includes(c) ? '#7dd97f' : 'rgba(255,255,255,0.75)', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '11px', letterSpacing: '0.5px', transition: 'all 0.2s' }}>
-                    {conditions.includes(c) ? '✓ ' : ''}{c}
+                    style={{ padding: '6px 14px', background: memberConditions.includes(c) ? 'rgba(93,187,99,0.25)' : 'rgba(255,255,255,0.06)', border: memberConditions.includes(c) ? '1px solid rgba(93,187,99,0.5)' : '1px solid rgba(255,255,255,0.12)', borderRadius: '2px', color: memberConditions.includes(c) ? '#7dd97f' : 'rgba(255,255,255,0.75)', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '11px', letterSpacing: '0.5px', transition: 'all 0.2s' }}>
+                    {memberConditions.includes(c) ? '✓ ' : ''}{c}
                   </button>
                 ))}
               </div>
@@ -285,9 +324,9 @@ export default function FamilyHub() {
                   ADD
                 </button>
               </div>
-              {conditions.length > 0 && (
+              {memberConditions.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '10px' }}>
-                  {conditions.map(c => (
+                  {memberConditions.map(c => (
                     <span key={c} onClick={() => toggleCondition(c)}
                       style={{ padding: '4px 12px', background: 'rgba(93,187,99,0.2)', border: '1px solid rgba(93,187,99,0.4)', borderRadius: '2px', color: '#7dd97f', fontSize: '11px', cursor: 'pointer' }}>
                       {c} ×
@@ -300,7 +339,7 @@ export default function FamilyHub() {
             {/* Avoidances */}
             <div style={{ marginBottom: '20px' }}>
               <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.7)', letterSpacing: '2px', marginBottom: '6px' }}>INGREDIENTS TO AVOID</div>
-              <input type="text" placeholder="e.g. peanuts, shellfish, dairy, gluten, soy..." value={avoidances} onChange={e => setAvoidances(e.target.value)} style={inputStyle} />
+              <input type="text" placeholder="e.g. peanuts, shellfish, dairy, gluten, soy..." value={memberAvoidances} onChange={e => setMemberAvoidances(e.target.value)} style={inputStyle} />
             </div>
 
             <div style={{ display: 'flex', gap: '12px' }}>
@@ -352,8 +391,21 @@ export default function FamilyHub() {
                     onClick={() => setSelectedMember(selectedMember?.id === member.id ? null : member)}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '14px' }}>
-                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: member.avatarColor || '#e8c49a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 'bold', color: 'rgba(0,0,0,0.7)', flexShrink: 0, boxShadow: `0 4px 12px ${member.avatarColor}40` }}>
-                        {getInitials(member.memberName)}
+                      <div
+                        style={{ position: 'relative', width: '48px', height: '48px', flexShrink: 0, cursor: 'pointer' }}
+                        onClick={e => { e.stopPropagation(); setUploadingMemberId(member.id); setTimeout(() => familyFileInputRef.current?.click(), 0); }}
+                        onMouseEnter={() => setHoveredAvatarId(member.id)}
+                        onMouseLeave={() => setHoveredAvatarId(null)}
+                      >
+                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: familyAvatars[member.id] ? 'transparent' : (member.avatarColor || '#e8c49a'), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 'bold', color: 'rgba(0,0,0,0.7)', boxShadow: `0 4px 12px ${member.avatarColor}40`, overflow: 'hidden' }}>
+                          {familyAvatars[member.id]
+                            ? <img src={familyAvatars[member.id]} alt={member.memberName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            : getInitials(member.memberName)
+                          }
+                        </div>
+                        {hoveredAvatarId === member.id && (
+                          <div style={{ position: 'absolute', bottom: 0, right: 0, width: '18px', height: '18px', borderRadius: '50%', background: 'rgba(0,0,0,0.75)', border: '1.5px solid rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontSize: '12px', fontWeight: '700', lineHeight: 1, pointerEvents: 'none' }}>+</div>
+                        )}
                       </div>
                       <div>
                         <div style={{ color: '#ffffff', fontSize: '16px', fontWeight: '600', marginBottom: '2px' }}>{member.memberName}</div>
@@ -409,8 +461,11 @@ export default function FamilyHub() {
               {selectedMember && (
                 <div style={{ ...sectionStyle, border: `1px solid ${selectedMember.avatarColor}40`, background: `rgba(${selectedMember.avatarColor}, 0.05)` }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '20px' }}>
-                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: selectedMember.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: 'bold', color: 'rgba(0,0,0,0.7)' }}>
-                      {getInitials(selectedMember.memberName)}
+                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: familyAvatars[selectedMember.id] ? 'transparent' : selectedMember.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: 'bold', color: 'rgba(0,0,0,0.7)', overflow: 'hidden' }}>
+                      {familyAvatars[selectedMember.id]
+                        ? <img src={familyAvatars[selectedMember.id]} alt={selectedMember.memberName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : getInitials(selectedMember.memberName)
+                      }
                     </div>
                     <div>
                       <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', letterSpacing: '2px', marginBottom: '2px' }}>CHECK SAFETY FOR</div>
@@ -448,7 +503,7 @@ export default function FamilyHub() {
         )}
 
       </div>
-    {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+    {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
     </div>
   );
 }

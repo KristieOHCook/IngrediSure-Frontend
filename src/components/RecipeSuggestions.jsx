@@ -2,6 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import LoadingScreen from './LoadingScreen';
+import { useUser } from '../UserContext';
+import { analyzeIngredients, verdictColor, verdictBackground, verdictIcon, CONDITION_TRIGGERS } from '../utils/safetyEngine';
+import { glassCard, inputStyle as themeInputStyle, btnPrimary, btnSuccess, btnDanger, sectionLabel, sectionLabelGold, COLORS, FONT } from '../styles/theme';
+import useToast from '../hooks/useToast';
+import useAuth from '../hooks/useAuth';
 
 const API = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 const BG = 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=1200&q=90';
@@ -15,7 +20,9 @@ const MEAL_CATEGORIES = [
 
 export default function RecipeSuggestions() {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+  const { user, conditions, avoidances, addSavedItem, loading: ctxLoading } = useUser();
+  const { user: authUser } = useAuth();
+  const { toast, showToast, hideToast } = useToast();
   const [recipes, setRecipes] = useState([]);
   const [selected, setSelected] = useState(null);
   const [groceryList, setGroceryList] = useState([]);
@@ -30,15 +37,16 @@ export default function RecipeSuggestions() {
   const [verdicts, setVerdicts] = useState({});
   const [listSaved, setListSaved] = useState(false);
   const [savingList, setSavingList] = useState(false);
+  const [savedRecipeNames, setSavedRecipeNames] = useState([]);
+  const [saveMessages, setSaveMessages] = useState({});
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (!stored) { navigate('/'); return; }
-    const parsed = JSON.parse(stored);
-    if (!parsed?.token) { navigate('/'); return; }
-    setUser(parsed);
+    if (!ctxLoading && !user) navigate('/');
+  }, [user, ctxLoading, navigate]);
+
+  useEffect(() => {
     fetchRecipes('Chicken');
-  }, [navigate]);
+  }, []);
 
   const fetchRecipes = async (category) => {
     setLoading(true);
@@ -52,7 +60,6 @@ export default function RecipeSuggestions() {
       const meals = (res.data.meals || []).slice(0, 12);
       setRecipes(meals);
     } catch (err) {
-      console.error('Recipe fetch error:', err);
     }
     setLoading(false);
   };
@@ -68,7 +75,6 @@ export default function RecipeSuggestions() {
       );
       setRecipes((res.data.meals || []).slice(0, 12));
     } catch (err) {
-      console.error('Search error:', err);
     }
     setLoading(false);
   };
@@ -114,11 +120,9 @@ export default function RecipeSuggestions() {
           });
           setVerdicts(safetyRes.data);
         } catch (err) {
-          console.error('Safety check error:', err);
         }
       }
     } catch (err) {
-      console.error('Recipe detail error:', err);
     }
     setLoading(false);
   };
@@ -147,16 +151,31 @@ export default function RecipeSuggestions() {
       setListSaved(true);
       setTimeout(() => setListSaved(false), 3000);
     } catch (err) {
-      console.error('Save list error:', err);
     }
     setSavingList(false);
   };
 
-  const verdictColor = (v) => {
-    if (v === 'Safe') return '#7dd97f';
-    if (v === 'Caution') return '#f0c040';
-    if (v === 'Unsafe') return '#ff6b6b';
-    return '#ffffff';
+  const saveRecipe = async (e, meal) => {
+    e.stopPropagation();
+    const key = meal.idMeal;
+    if (savedRecipeNames.includes(meal.strMeal.toLowerCase())) {
+      setSaveMessages(prev => ({ ...prev, [key]: 'This recipe has already been saved.' }));
+      return;
+    }
+    const result = await addSavedItem({
+      itemName: meal.strMeal,
+      itemSource: 'Recipe',
+      brandOrRestaurant: '',
+      ingredients: '',
+      safetyVerdict: 'Safe',
+      matchedTriggers: '',
+    });
+    if (result?.error) {
+      setSaveMessages(prev => ({ ...prev, [key]: 'Error saving recipe.' }));
+      return;
+    }
+    setSavedRecipeNames(prev => [...prev, meal.strMeal.toLowerCase()]);
+    setSaveMessages(prev => ({ ...prev, [key]: null }));
   };
 
   const sectionStyle = {
@@ -290,24 +309,53 @@ export default function RecipeSuggestions() {
               {loading ? 'LOADING RECIPES...' : `${activeCategory.toUpperCase()} RECIPES — ${recipes.length} FOUND`}
             </h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-              {recipes.map(meal => (
-                <div
-                  key={meal.idMeal}
-                  onClick={() => selectRecipe(meal)}
-                  style={{ cursor: 'pointer', borderRadius: '4px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', transition: 'all 0.2s' }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.3)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-                >
-                  <img
-                    src={meal.strMealThumb}
-                    alt={meal.strMeal}
-                    style={{ width: '100%', height: '140px', objectFit: 'cover', display: 'block' }}
-                  />
-                  <div style={{ padding: '12px', background: 'rgba(255,255,255,0.06)' }}>
-                    <div style={{ color: '#ffffff', fontSize: '13px', lineHeight: '1.4' }}>{meal.strMeal}</div>
+              {recipes.map(meal => {
+                const alreadySaved = savedRecipeNames.includes(meal.strMeal.toLowerCase());
+                return (
+                  <div
+                    key={meal.idMeal}
+                    style={{ borderRadius: '4px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', transition: 'all 0.2s' }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.3)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+                  >
+                    <div onClick={() => selectRecipe(meal)} style={{ cursor: 'pointer' }}>
+                      <img
+                        src={meal.strMealThumb}
+                        alt={meal.strMeal}
+                        style={{ width: '100%', height: '140px', objectFit: 'cover', display: 'block' }}
+                      />
+                      <div style={{ padding: '12px 12px 8px', background: 'rgba(255,255,255,0.06)' }}>
+                        <div style={{ color: '#ffffff', fontSize: '13px', lineHeight: '1.4' }}>{meal.strMeal}</div>
+                      </div>
+                    </div>
+                    <div style={{ padding: '8px 12px 10px', background: 'rgba(255,255,255,0.04)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+                        <button
+                          onClick={e => saveRecipe(e, meal)}
+                          disabled={alreadySaved}
+                          style={{
+                            padding: '5px 14px',
+                            background: alreadySaved ? 'rgba(162,155,254,0.08)' : 'rgba(162,155,254,0.15)',
+                            border: `1px solid ${alreadySaved ? 'rgba(162,155,254,0.25)' : 'rgba(162,155,254,0.5)'}`,
+                            borderRadius: '4px',
+                            color: alreadySaved ? 'rgba(162,155,254,0.5)' : 'rgba(162,155,254,0.9)',
+                            cursor: alreadySaved ? 'default' : 'pointer',
+                            fontFamily: 'Georgia, serif', fontSize: '11px', letterSpacing: '1.5px',
+                            transition: 'all 0.2s',
+                          }}
+                        >
+                          {alreadySaved ? 'SAVED' : 'SAVE RECIPE'}
+                        </button>
+                      </div>
+                      {saveMessages[meal.idMeal] && (
+                        <div style={{ color: 'rgba(162,155,254,0.7)', fontSize: '10px', marginTop: '5px', textAlign: 'right', letterSpacing: '0.3px' }}>
+                          {saveMessages[meal.idMeal]}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

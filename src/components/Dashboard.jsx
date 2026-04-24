@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAccessibility } from '../AccessibilityContext';
+import { useUser } from '../UserContext';
 import SMSReminder from './SMSReminder';
 import SimpleModeWrapper from './SimpleModeWrapper';
+import { glassCard, inputStyle as themeInputStyle, btnPrimary, btnSuccess, btnDanger, sectionLabel, sectionLabelGold, COLORS, FONT } from '../styles/theme';
 
 const API = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 
@@ -272,24 +274,7 @@ export default function Dashboard() {
   const [animating, setAnimating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [quickStats, setQuickStats] = useState({ conditions: null, avoidances: null, savedScans: null, medications: null });
-
-  const fetchQuickStats = async (u) => {
-    const authHeaders = { Authorization: `Bearer ${u.token}` };
-    const [condRes, avoRes, medRes] = await Promise.all([
-      axios.get(`${API}/conditions`, { headers: authHeaders }).catch(() => ({ data: [] })),
-      axios.get(`${API}/avoidances`, { headers: authHeaders }).catch(() => ({ data: [] })),
-      axios.get(`${API}/medications/user/${u.userId}`, { headers: authHeaders }).catch(() => ({ data: [] })),
-    ]);
-    let savedCount = 0;
-    try { savedCount = JSON.parse(localStorage.getItem('savedScans') || '[]').length; } catch {}
-    setQuickStats({
-      conditions: (condRes.data || []).length,
-      avoidances: (avoRes.data || []).length,
-      savedScans: savedCount,
-      medications: (medRes.data || []).length,
-    });
-  };
+  const { user: ctxUser, conditions, avoidances, medications, savedItems, loading: ctxLoading } = useUser();
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
@@ -297,7 +282,6 @@ export default function Dashboard() {
     const parsed = JSON.parse(stored);
     if (!parsed?.token) { navigate('/'); return; }
     setUser(parsed);
-    fetchQuickStats(parsed);
     setLoading(false);
 
     const interval = setInterval(() => {
@@ -361,8 +345,11 @@ export default function Dashboard() {
             <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.6)', letterSpacing: '2px' }}>EAT WELL · CHOOSE WISELY</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(232,196,154,0.45)', border: '2px solid rgba(255,200,120,0.9)', fontSize: '13px', color: '#ffffff', fontWeight: 'bold' }}>
-              {user?.username?.[0]?.toUpperCase()}
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: localStorage.getItem('userAvatar') ? 'transparent' : 'rgba(232,196,154,0.45)', border: '2px solid rgba(255,200,120,0.9)', fontSize: '13px', color: '#ffffff', fontWeight: 'bold', overflow: 'hidden' }}>
+              {localStorage.getItem('userAvatar')
+                ? <img src={localStorage.getItem('userAvatar')} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : user?.username?.[0]?.toUpperCase()
+              }
             </div>
             <button onClick={handleLogout}
               style={{ background: 'transparent', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.3)', padding: '6px 14px', borderRadius: '2px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '10px', letterSpacing: '1px' }}
@@ -400,13 +387,13 @@ export default function Dashboard() {
               </p>
               <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '28px', flexWrap: 'wrap' }}>
                 {[
-                  { label: 'Conditions', value: quickStats.conditions, icon: '♥', color: 'rgba(93,187,99,0.85)', tab: 'conditions' },
-                  { label: 'Avoidances', value: quickStats.avoidances, icon: '⚠', color: 'rgba(255,107,53,0.85)', tab: 'avoidances' },
-                  { label: 'Saved Scans', value: quickStats.savedScans, icon: '★', color: 'rgba(116,185,255,0.85)', tab: 'saved' },
-                  { label: 'Medications', value: quickStats.medications, icon: '★', color: 'rgba(116,185,255,0.85)', tab: 'medications' },
+                  { label: 'Conditions', value: conditions.length, icon: '♥', color: 'rgba(93,187,99,0.85)', tab: 'conditions' },
+                  { label: 'Avoidances', value: avoidances.length, icon: '⚠', color: 'rgba(255,107,53,0.85)', tab: 'avoidances' },
+                  { label: 'Saved Scans', value: savedItems.length, icon: '★', color: 'rgba(116,185,255,0.85)', tab: 'saved' },
+                  { label: 'Medications', value: medications.length, icon: '★', color: 'rgba(116,185,255,0.85)', tab: 'medications' },
                   { label: 'Account', value: null, icon: '—', color: 'rgba(162,155,254,0.85)', tab: 'account' },
                 ].map(stat => (
-                  <div key={stat.label} onClick={() => navigate(`/my-profile?tab=${stat.tab}`)}
+                  <div key={stat.label} onClick={() => stat.tab ? navigate(`/my-profile?tab=${stat.tab}`) : navigate('/my-profile')}
                     style={{ cursor: 'pointer', background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: `1px solid ${stat.color}`, borderRadius: '4px', padding: '12px 18px', minWidth: '90px' }}
                   >
                     <div style={{ fontSize: '16px', marginBottom: '4px', color: stat.color }}>{stat.icon}</div>
@@ -496,8 +483,11 @@ export default function Dashboard() {
           {/* User info */}
           <div style={{ marginBottom: '28px', paddingBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingRight: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ width: '34px', height: '34px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(232,196,154,0.45)', border: '2px solid rgba(255,200,120,0.9)', fontSize: '13px', color: '#ffffff', fontWeight: 'bold', flexShrink: 0 }}>
-                {user?.username?.[0]?.toUpperCase()}
+              <div style={{ width: '34px', height: '34px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: localStorage.getItem('userAvatar') ? 'transparent' : 'rgba(232,196,154,0.45)', border: '2px solid rgba(255,200,120,0.9)', fontSize: '13px', color: '#ffffff', fontWeight: 'bold', flexShrink: 0, overflow: 'hidden' }}>
+                {localStorage.getItem('userAvatar')
+                  ? <img src={localStorage.getItem('userAvatar')} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : user?.username?.[0]?.toUpperCase()
+                }
               </div>
               <div>
                 <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px' }}>WELCOME BACK</div>
@@ -604,24 +594,42 @@ export default function Dashboard() {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>
                   {[
-                    { label: 'Conditions', value: quickStats.conditions, icon: '♥', color: 'rgba(93,187,99,0.85)', tab: 'conditions' },
-                    { label: 'Avoidances', value: quickStats.avoidances, icon: '⚠', color: 'rgba(255,107,53,0.85)', tab: 'avoidances' },
-                    { label: 'Saved Scans', value: quickStats.savedScans, icon: '★', color: 'rgba(116,185,255,0.85)', tab: 'saved' },
-                    { label: 'Medications', value: quickStats.medications, icon: '★', color: 'rgba(116,185,255,0.85)', tab: 'medications' },
-                    { label: 'Account', value: null, icon: '—', color: 'rgba(162,155,254,0.85)', tab: 'account' },
+                    { label: 'Conditions', value: conditions.length, icon: '♥', color: 'rgba(93,187,99,0.85)', tab: 'conditions' },
+                    { label: 'Avoidances', value: avoidances.length, icon: '⚠', color: 'rgba(255,107,53,0.85)', tab: 'avoidances' },
+                    { label: 'Saved Scans', value: savedItems.length, icon: '★', color: 'rgba(116,185,255,0.85)', tab: 'saved' },
+                    { label: 'Medications', value: medications.length, icon: '+', color: 'rgba(116,185,255,0.85)', tab: 'medications' },
+                    { label: 'My Profile', value: null, icon: 'P', color: 'rgba(232,196,154,0.85)', tab: '' },
+                    { label: 'Account', value: null, icon: 'A', color: 'rgba(162,155,254,0.85)', tab: 'account' },
                   ].map(stat => (
-                    <div key={stat.label} onClick={() => navigate(`/my-profile?tab=${stat.tab}`)}
+                    <div key={stat.label} onClick={() => stat.tab ? navigate(`/my-profile?tab=${stat.tab}`) : navigate('/my-profile')}
                       style={{ cursor: 'pointer', background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: `1px solid ${stat.color}`, borderRadius: '4px', padding: '16px 24px', minWidth: '110px', transition: 'all 0.25s' }}
                       onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.16)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.transform = 'none'; }}
                     >
                       <div style={{ fontSize: '20px', marginBottom: '6px', color: stat.color }}>{stat.icon}</div>
-                      <div style={{ fontSize: '26px', fontWeight: '300', color: '#ffffff', fontFamily: 'Georgia, serif', lineHeight: 1 }}>
-                        {stat.value !== null ? stat.value : '—'}
-                      </div>
-                      <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', letterSpacing: '1.5px', marginTop: '4px', fontFamily: 'Georgia, serif' }}>
-                        {stat.label.toUpperCase()}
-                      </div>
+                      {stat.label === 'My Profile' ? (
+                        <div>
+                          <div style={{ fontSize: '13px', fontWeight: '600', color: '#ffffff', fontFamily: 'Georgia, serif', marginBottom: '6px' }}>
+                            MY PROFILE
+                          </div>
+                          <div style={{ fontSize: '10px', fontFamily: 'Georgia, serif', lineHeight: 1.8 }}>
+                            <span style={{ color: 'rgba(93,187,99,0.9)' }}>{conditions.length}</span><span style={{ color: 'rgba(255,255,255,0.5)' }}> conditions</span><br/>
+                            <span style={{ color: 'rgba(255,107,53,0.9)' }}>{avoidances.length}</span><span style={{ color: 'rgba(255,255,255,0.5)' }}> avoidances</span><br/>
+                            <span style={{ color: 'rgba(116,185,255,0.9)' }}>{medications.length}</span><span style={{ color: 'rgba(255,255,255,0.5)' }}> medications</span><br/>
+                            <span style={{ color: 'rgba(74,159,212,0.9)' }}>{savedItems.filter(i => i.itemSource === 'Restaurant').length}</span><span style={{ color: 'rgba(255,255,255,0.5)' }}> restaurants</span><br/>
+                            <span style={{ color: 'rgba(162,155,254,0.9)' }}>{savedItems.filter(i => i.itemSource === 'Recipe').length}</span><span style={{ color: 'rgba(255,255,255,0.5)' }}> recipes</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div style={{ fontSize: '26px', fontWeight: '300', color: '#ffffff', fontFamily: 'Georgia, serif', lineHeight: 1 }}>
+                            {stat.value !== null ? stat.value : '—'}
+                          </div>
+                          <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', letterSpacing: '1.5px', marginTop: '4px', fontFamily: 'Georgia, serif' }}>
+                            {stat.label.toUpperCase()}
+                          </div>
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>

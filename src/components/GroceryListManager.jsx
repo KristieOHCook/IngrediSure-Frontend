@@ -3,18 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Toast from './Toast';
 import LoadingScreen from './LoadingScreen';
+import { glassCard, inputStyle, btnPrimary, btnSuccess, btnDanger, sectionLabel, sectionLabelGold, COLORS, FONT } from '../styles/theme';
+import useToast from '../hooks/useToast';
+import useAuth from '../hooks/useAuth';
 
 const API = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 const BG = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200&q=90';
 
 export default function GroceryListManager() {
   const navigate = useNavigate();
+  const { user: authUser } = useAuth();
   const [user, setUser] = useState(null);
-  const [toast, setToast] = useState(null);
-
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type });
-  };
+  const { toast, showToast, hideToast } = useToast();
   const [lists, setLists] = useState([]);
   const [selectedList, setSelectedList] = useState(null);
   const [parsedItems, setParsedItems] = useState([]);
@@ -26,12 +26,12 @@ export default function GroceryListManager() {
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
-    if (!stored) { navigate('/'); return; }
+    if (!stored) return;
     const parsed = JSON.parse(stored);
-    if (!parsed?.token) { navigate('/'); return; }
+    if (!parsed?.token) return;
     setUser(parsed);
     loadLists(parsed);
-  }, [navigate]);
+  }, []);
 
   const headers = (u) => ({ Authorization: `Bearer ${u.token}` });
 
@@ -43,7 +43,6 @@ export default function GroceryListManager() {
       );
       setLists(res.data || []);
     } catch (err) {
-      console.error('Load error:', err);
     }
     setLoading(false);
   };
@@ -99,7 +98,6 @@ export default function GroceryListManager() {
         { headers: headers(user) }
       );
     } catch (err) {
-      console.error('Save error:', err);
     }
   };
 
@@ -121,7 +119,6 @@ export default function GroceryListManager() {
       showToast('List created! ✓', 'success');
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
-      console.error('Create error:', err);
     }
   };
 
@@ -139,7 +136,6 @@ export default function GroceryListManager() {
       showToast('List updated! ✓', 'success');
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
-      console.error('Delete error:', err);
     }
   };
 
@@ -157,7 +153,6 @@ export default function GroceryListManager() {
         setSelectedList(prev => ({ ...prev, listName: newName }));
       }
     } catch (err) {
-      console.error('Rename error:', err);
     }
   };
 
@@ -170,15 +165,6 @@ export default function GroceryListManager() {
     border: '1px solid rgba(255,255,255,0.12)',
     borderRadius: '4px', padding: '24px 28px',
     marginBottom: '16px',
-  };
-
-  const inputStyle = {
-    width: '100%', padding: '12px 16px',
-    background: 'rgba(255,255,255,0.08)',
-    border: '1px solid rgba(255,255,255,0.2)',
-    borderRadius: '4px', color: '#ffffff',
-    fontFamily: 'Georgia, serif', fontSize: '14px',
-    outline: 'none', boxSizing: 'border-box',
   };
 
   if (loading) return <LoadingScreen bg={BG} />;
@@ -419,7 +405,7 @@ export default function GroceryListManager() {
           </div>
         </div>
       </div>
-    {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+    {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
     </div>
   );
 }

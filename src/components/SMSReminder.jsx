@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 export default function SMSReminder({ compact = false }) {
 
@@ -33,3 +34,7 @@ export default function SMSReminder({ compact = false }) {
     </div>
   );
 }
+
+SMSReminder.propTypes = {
+  compact: PropTypes.bool,
+};

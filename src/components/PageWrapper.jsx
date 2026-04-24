@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { useAccessibility } from '../AccessibilityContext';
 import ReadAloudButton from './ReadAloudButton';
 
@@ -77,3 +78,12 @@ export default function PageWrapper({ children, title, description, readText, sh
     </div>
   );
 }
+
+PageWrapper.propTypes = {
+  children: PropTypes.node,
+  title: PropTypes.string,
+  description: PropTypes.string,
+  readText: PropTypes.string,
+  showHeader: PropTypes.bool,
+  bg: PropTypes.string,
+};

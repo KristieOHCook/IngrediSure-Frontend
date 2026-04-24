@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { useAccessibility } from '../AccessibilityContext';
 
 export default function ReadAloudButton({ text, style }) {
@@ -26,3 +27,8 @@ export default function ReadAloudButton({ text, style }) {
     </button>
   );
 }
+
+ReadAloudButton.propTypes = {
+  text: PropTypes.string,
+  style: PropTypes.object,
+};

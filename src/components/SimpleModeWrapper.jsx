@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { useAccessibility } from '../AccessibilityContext';
 
@@ -116,3 +117,8 @@ export default function SimpleModeWrapper({ user, onLogout }) {
     </div>
   );
 }
+
+SimpleModeWrapper.propTypes = {
+  user: PropTypes.object,
+  onLogout: PropTypes.func,
+};

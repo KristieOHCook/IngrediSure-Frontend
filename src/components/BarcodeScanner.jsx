@@ -2,14 +2,21 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Html5QrcodeScanner } from 'html5-qrcode';
+import { useUser } from '../UserContext';
+import { analyzeIngredients, verdictColor, verdictBackground, verdictIcon, CONDITION_TRIGGERS } from '../utils/safetyEngine';
+import { glassCard, inputStyle as themeInputStyle, btnPrimary, btnSuccess, btnDanger, sectionLabel, sectionLabelGold, COLORS, FONT } from '../styles/theme';
+import useToast from '../hooks/useToast';
+import useAuth from '../hooks/useAuth';
 
 const API = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 const BG = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200&q=90';
 
 export default function BarcodeScanner() {
   const navigate = useNavigate();
-  
-  const [user, setUser] = useState(null);
+  const { user, conditions, avoidances, addSavedItem, loading: ctxLoading } = useUser();
+  const { user: authUser } = useAuth();
+  const { toast, showToast, hideToast } = useToast();
+
   const [scanning, setScanning] = useState(false);
   const [scannedCode, setScannedCode] = useState('');
   const [product, setProduct] = useState(null);
@@ -17,20 +24,18 @@ export default function BarcodeScanner() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [manualCode, setManualCode] = useState('');
+  const [isSaved, setIsSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const scannerRef = useRef(null);
   const scannerInstanceRef = useRef(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (!stored) { navigate('/'); return; }
-    const parsed = JSON.parse(stored);
-    if (!parsed?.token) { navigate('/'); return; }
-    setUser(parsed);
+    if (!ctxLoading && !user) navigate('/');
+  }, [user, ctxLoading, navigate]);
 
-    return () => {
-      stopScanner();
-    };
-  }, [navigate]);
+  useEffect(() => {
+    return () => stopScanner();
+  }, []);
 
   const startScanner = () => {
     setScanning(true);
@@ -77,6 +82,8 @@ export default function BarcodeScanner() {
     setVerdict(null);
     setLoading(true);
     setError('');
+    setIsSaved(false);
+    setSaveError('');
 
     try {
       // Look up product by barcode using Open Food Facts
@@ -118,25 +125,19 @@ export default function BarcodeScanner() {
     handleBarcode(manualCode.trim());
   };
 
-  const verdictColor = (v) => {
-    if (v === 'Safe') return '#7dd97f';
-    if (v === 'Caution') return '#f0c040';
-    if (v === 'Unsafe') return '#ff6b6b';
-    return '#ffffff';
-  };
-
-  const verdictBg = (v) => {
-    if (v === 'Safe') return 'rgba(93,187,99,0.2)';
-    if (v === 'Caution') return 'rgba(240,192,64,0.2)';
-    if (v === 'Unsafe') return 'rgba(255,107,107,0.2)';
-    return 'rgba(255,255,255,0.1)';
-  };
-
-  const verdictIcon = (v) => {
-    if (v === 'Safe') return '✓';
-    if (v === 'Caution') return '⚠';
-    if (v === 'Unsafe') return '✗';
-    return '?';
+  const handleSave = async () => {
+    if (isSaved || !product || !verdict) return;
+    const result = await addSavedItem({
+      itemName: product.product_name || 'Unknown Product',
+      itemSource: 'Barcode',
+      brandOrRestaurant: product.brands || '',
+      ingredients: product.ingredients_text || '',
+      safetyVerdict: verdict.safetyVerdict || '',
+      matchedTriggers: (verdict.flaggedIngredients || []).join(', '),
+    });
+    if (result?.error) { setSaveError(result.error); return; }
+    setIsSaved(true);
+    setSaveError('');
   };
 
   const sectionStyle = {
@@ -282,7 +283,7 @@ export default function BarcodeScanner() {
             )}
 
             {/* Verdict */}
-            <div style={{ background: verdictBg(verdict.safetyVerdict), border: `1px solid ${verdictColor(verdict.safetyVerdict)}40`, borderRadius: '4px', padding: '20px 24px' }}>
+            <div style={{ background: verdictBackground(verdict.safetyVerdict), border: `1px solid ${verdictColor(verdict.safetyVerdict)}40`, borderRadius: '4px', padding: '20px 24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: verdict.flaggedIngredients?.length > 0 ? '16px' : '0' }}>
                 <div style={{ fontSize: '32px', color: verdictColor(verdict.safetyVerdict) }}>
                   {verdictIcon(verdict.safetyVerdict)}
@@ -320,9 +321,37 @@ export default function BarcodeScanner() {
               )}
             </div>
 
+            {/* Save to Profile */}
+            <div>
+              <button
+                onClick={handleSave}
+                disabled={isSaved}
+                style={{
+                  background: isSaved ? 'rgba(93,187,99,0.08)' : 'rgba(93,187,99,0.15)',
+                  border: '1px solid rgba(93,187,99,0.4)',
+                  color: 'rgba(93,187,99,0.9)',
+                  padding: '10px 24px',
+                  borderRadius: '4px',
+                  cursor: isSaved ? 'default' : 'pointer',
+                  fontFamily: 'Georgia, serif',
+                  fontSize: '12px',
+                  letterSpacing: '1.5px',
+                  marginTop: '16px',
+                  opacity: isSaved ? 0.6 : 1,
+                }}
+              >
+                {isSaved ? '✓ SAVED TO PROFILE' : 'SAVE TO PROFILE'}
+              </button>
+              {saveError && (
+                <div style={{ color: 'rgba(255,107,107,0.9)', fontSize: '11px', marginTop: '6px', fontStyle: 'italic' }}>
+                  {saveError}
+                </div>
+              )}
+            </div>
+
             {/* Scan another */}
             <button
-              onClick={() => { setProduct(null); setVerdict(null); setScannedCode(''); setManualCode(''); setError(''); }}
+              onClick={() => { setProduct(null); setVerdict(null); setScannedCode(''); setManualCode(''); setError(''); setIsSaved(false); setSaveError(''); }}
               style={{ width: '100%', padding: '14px', background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '12px', letterSpacing: '2px', marginTop: '16px' }}
             >
               SCAN ANOTHER PRODUCT
