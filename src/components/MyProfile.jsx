@@ -50,21 +50,23 @@ export default function MyProfile() {
   const [newEmail, setNewEmail] = useState('');
 
   const [savedFilter, setSavedFilter] = useState('All');
-  const [userAvatar, setUserAvatar] = useState(() => localStorage.getItem('userAvatar') || null);
-  const [avatarHovered, setAvatarHovered] = useState(false);
-  const avatarFileRef = useRef(null);
+  const [avatarUrl, setAvatarUrl] = useState(() => localStorage.getItem('userAvatar') || null);
+  const fileInputRef = useRef(null);
 
-  const handleAvatarUpload = (e) => {
+  const handleAvatarClick = () => {
+    if (fileInputRef.current) fileInputRef.current.click();
+  };
+
+  const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
-      const base64 = ev.target.result;
+    reader.onload = (event) => {
+      const base64 = event.target.result;
       localStorage.setItem('userAvatar', base64);
-      setUserAvatar(base64);
+      setAvatarUrl(base64);
     };
     reader.readAsDataURL(file);
-    e.target.value = '';
   };
 
   useEffect(() => {
@@ -177,36 +179,50 @@ export default function MyProfile() {
           ← DASHBOARD
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div
-            style={{ position: 'relative', width: '72px', height: '72px', flexShrink: 0, cursor: 'pointer' }}
-            onClick={() => avatarFileRef.current?.click()}
-            onMouseEnter={() => setAvatarHovered(true)}
-            onMouseLeave={() => setAvatarHovered(false)}
-          >
+          <div style={{ position: 'relative', display: 'inline-block', cursor: 'pointer' }} onClick={handleAvatarClick}>
             <div style={{
-              width: '72px', height: '72px', borderRadius: '50%',
-              background: userAvatar ? 'transparent' : 'rgba(232,196,154,0.2)',
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
               border: '2px solid rgba(232,196,154,0.6)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              overflow: 'hidden', fontSize: '28px', fontWeight: '600', color: '#e8c49a',
+              overflow: 'hidden',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: avatarUrl ? 'transparent' : 'rgba(232,196,154,0.45)',
+              fontSize: '28px',
+              color: '#ffffff',
+              fontWeight: 'bold',
+              fontFamily: 'Georgia, serif',
             }}>
-              {userAvatar
-                ? <img src={userAvatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : (user?.username?.[0]?.toUpperCase() || '?')
+              {avatarUrl
+                ? <img src={avatarUrl} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : user?.username?.[0]?.toUpperCase()
               }
             </div>
-            {avatarHovered && (
-              <div style={{
-                position: 'absolute', bottom: 0, right: 0,
-                width: '22px', height: '22px', borderRadius: '50%',
-                background: 'rgba(0,0,0,0.75)', border: '1.5px solid rgba(255,255,255,0.4)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#ffffff', fontSize: '14px', fontWeight: '700', lineHeight: 1,
-                pointerEvents: 'none',
-              }}>+</div>
-            )}
-            <input ref={avatarFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} />
+            <div style={{
+              position: 'absolute',
+              bottom: '0px',
+              right: '0px',
+              width: '24px',
+              height: '24px',
+              borderRadius: '50%',
+              background: 'rgba(0,0,0,0.75)',
+              border: '1px solid rgba(232,196,154,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '12px',
+              color: '#e8c49a',
+            }}>+</div>
           </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handleAvatarChange}
+          />
           <div>
             <h1 style={{ margin: 0, fontSize: '24px', fontWeight: '400', color: '#e8c49a', letterSpacing: '2px' }}>
               {user?.username?.toUpperCase()}

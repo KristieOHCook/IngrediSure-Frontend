@@ -324,6 +324,7 @@ export default function Dashboard() {
   })).filter(s => s.tiles.length > 0 || s.howto || s.story);
 
   const currentSection = visibleSections.find(s => s.id === activeSection);
+  const sidebarAvatar = localStorage.getItem('userAvatar');
 
   // ── MOBILE LAYOUT ──────────────────────────────────────────────
   if (isMobile) {
@@ -345,9 +346,9 @@ export default function Dashboard() {
             <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.6)', letterSpacing: '2px' }}>EAT WELL · CHOOSE WISELY</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: localStorage.getItem('userAvatar') ? 'transparent' : 'rgba(232,196,154,0.45)', border: '2px solid rgba(255,200,120,0.9)', fontSize: '13px', color: '#ffffff', fontWeight: 'bold', overflow: 'hidden' }}>
-              {localStorage.getItem('userAvatar')
-                ? <img src={localStorage.getItem('userAvatar')} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: sidebarAvatar ? 'transparent' : 'rgba(232,196,154,0.45)', border: '2px solid rgba(255,200,120,0.9)', fontSize: '13px', color: '#ffffff', fontWeight: 'bold', overflow: 'hidden' }}>
+              {sidebarAvatar
+                ? <img src={sidebarAvatar} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                 : user?.username?.[0]?.toUpperCase()
               }
             </div>
@@ -483,9 +484,9 @@ export default function Dashboard() {
           {/* User info */}
           <div style={{ marginBottom: '28px', paddingBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingRight: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ width: '34px', height: '34px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: localStorage.getItem('userAvatar') ? 'transparent' : 'rgba(232,196,154,0.45)', border: '2px solid rgba(255,200,120,0.9)', fontSize: '13px', color: '#ffffff', fontWeight: 'bold', flexShrink: 0, overflow: 'hidden' }}>
-                {localStorage.getItem('userAvatar')
-                  ? <img src={localStorage.getItem('userAvatar')} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div style={{ width: '34px', height: '34px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: sidebarAvatar ? 'transparent' : 'rgba(232,196,154,0.45)', border: '2px solid rgba(255,200,120,0.9)', fontSize: '13px', color: '#ffffff', fontWeight: 'bold', flexShrink: 0, overflow: 'hidden' }}>
+                {sidebarAvatar
+                  ? <img src={sidebarAvatar} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                   : user?.username?.[0]?.toUpperCase()
                 }
               </div>
